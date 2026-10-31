@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import heroArtImage from './assets/characters/IdolShowdownNextFesBiboo_1.png'
 import contactCharacterImage from './assets/characters/fbk-eating.gif'
 import gameLogo from './assets/branding/IdolShowdownNF_logo.png'
@@ -370,9 +370,14 @@ function App() {
     <>
       <header className="site-header">
         <nav className="main-nav" aria-label="Điều hướng chính">
-          <button type="button" className="nav-link" onClick={() => setActivePage('home')}>
+          <a
+            className="nav-link"
+            href="https://www.idolshowdownreplay.games"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Replay
-          </button>
+          </a>
           <button type="button" className="nav-link" onClick={() => setActivePage('news')}>
             News
           </button>
@@ -724,3 +729,4 @@ function App() {
 }
 
 export default App
+
