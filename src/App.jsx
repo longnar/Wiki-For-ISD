@@ -15,6 +15,7 @@ import CharacterSelectGrid from './components/character/CharacterSelectGrid'
 import NewsScreen from './components/news/NewsScreen'
 import Footer from './components/Footer'
 import HeaderSearchBar from './components/HeaderSearchBar'
+import SiteHeader from './components/SiteHeader'
 import { INITIAL_GLOSSARY_TERMS } from './data/glossaryData'
 import { INITIAL_NEWS_PATCHES } from './data/newsData'
 import './components/character/CharacterStyles.css'
@@ -366,44 +367,34 @@ function App() {
     }
   }, [activePage])
 
+
+  const renderSharedHeader = () => (
+    <SiteHeader
+      onNavigateHome={() => setActivePage('home')}
+      onNavigateNews={() => setActivePage('news')}
+      onNavigateContacts={() => setActivePage('contacts')}
+      dbCharacters={dbCharacters}
+      searchGlossaries={searchGlossaries}
+      searchNews={searchNews}
+      onSelectCharacter={(char) => {
+        setSelectedCharacter(char)
+        setActivePage('selection')
+      }}
+      onSelectGlossary={(item) => {
+        setActivePage(item.level === 'advanced' ? 'glossary-advanced' : 'glossary-basic')
+      }}
+      onSelectNews={() => {
+        setActivePage('news')
+      }}
+      isAuthenticated={isAuthenticated}
+      onLogin={() => setIsLoginOpen(true)}
+      onLogout={handleLogout}
+    />
+  )
+
   const renderHome = () => (
     <>
-      <header className="site-header">
-        <nav className="main-nav" aria-label="Điều hướng chính">
-          <a
-            className="nav-link"
-            href="https://www.idolshowdownreplay.games"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Replay
-          </a>
-          <button type="button" className="nav-link" onClick={() => setActivePage('news')}>
-            News
-          </button>
-          <button type="button" className="nav-link" onClick={() => setActivePage('contacts')}>
-            Contacts
-          </button>
-          <HeaderSearchBar
-            characters={dbCharacters}
-            glossaries={searchGlossaries}
-            news={searchNews}
-            onSelectCharacter={(char) => {
-              setSelectedCharacter(char)
-              setActivePage('selection')
-            }}
-            onSelectGlossary={(item) => {
-              setActivePage(item.level === 'advanced' ? 'glossary-advanced' : 'glossary-basic')
-            }}
-            onSelectNews={() => {
-              setActivePage('news')
-            }}
-          />
-          <button type="button" className="login-trigger" onClick={isAuthenticated ? handleLogout : () => setIsLoginOpen(true)}>
-            {isAuthenticated ? 'Logout' : 'Login'}
-          </button>
-        </nav>
-      </header>
+      {renderSharedHeader()}
 
       <main>
         <section className="hero" id="hero">
@@ -571,7 +562,9 @@ function App() {
   )
 
   const renderSelection = () => (
-    <CharacterSelectGrid
+    <>
+      {renderSharedHeader()}
+      <CharacterSelectGrid
       characters={dbCharacters}
       selectedCharacter={selectedCharacter || dbCharacters[0]}
       onSelectCharacter={(char) => setSelectedCharacter(char)}
@@ -584,6 +577,7 @@ function App() {
       isAuthenticated={isAuthenticated}
       onBackHome={() => setActivePage('home')}
     />
+    </>
   )
 
   const renderNews = () => (

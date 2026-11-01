@@ -15,7 +15,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px 20px;
+  padding: 84px 20px 24px;
   box-sizing: border-box;
   background: transparent;
   font-family: inherit;
@@ -27,7 +27,7 @@
 /* Nút Back quay lại màn hình Showcase - Flat Glassmorphism */
 .figma-detail-back-btn {
   position: absolute;
-  top: 20px;
+  top: 80px;
   left: 32px;
   display: inline-flex;
   align-items: center;

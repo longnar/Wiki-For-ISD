@@ -13,7 +13,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 30px 20px;
+  padding: 84px 20px 30px;
   box-sizing: border-box;
   isolation: isolate;
   font-family: inherit;
@@ -22,7 +22,7 @@
 /* Nút Back ở góc trên bên trái */
 .figma-glossary-back-btn {
   position: absolute;
-  top: 36px;
+  top: 80px;
   left: 40px;
   z-index: 20;
   display: inline-flex;
