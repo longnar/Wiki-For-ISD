@@ -5,6 +5,9 @@ require('dotenv').config();
 
 const migrationPattern = /^db_migration_\d+_.+\.sql$/;
 
+// Lỗi MySQL nghĩa là "đã tồn tại rồi": cột trùng, index trùng, bảng đã có
+const alreadyExistsErrors = new Set(['ER_DUP_FIELDNAME', 'ER_DUP_KEYNAME', 'ER_TABLE_EXISTS_ERROR']);
+
 const splitStatements = (sql) => sql
     .split(';')
     .map((statement) => statement.trim())
@@ -50,7 +53,14 @@ async function migrate() {
 
             console.log(`Applying ${migration}...`);
             for (const statement of splitStatements(fs.readFileSync(path.join(__dirname, 'migrations', migration), 'utf8'))) {
-                await connection.query(statement);
+                try {
+                    await connection.query(statement);
+                } catch (error) {
+                    // DB tạo mới từ 001_initial_schema.sql đã có sẵn cột/index/bảng mà migration cũ thêm vào
+                    // -> bỏ qua câu lệnh đó thay vì làm dừng cả chuỗi migration phía sau
+                    if (!alreadyExistsErrors.has(error.code)) throw error;
+                    console.log(`  - Bỏ qua câu lệnh (${error.code}): ${error.message}`);
+                }
             }
             await connection.query('INSERT INTO schema_migrations (version) VALUES (?)', [migration]);
         }
