@@ -602,20 +602,27 @@ function App() {
     </main>
   )
 
+  // GlossaryStyles.css đã chừa sẵn padding-top 84px cho SiteHeader (fixed, cao 64px)
   const renderGlossaryBasic = () => (
-    <GlossaryBasicScreen
-      isAuthenticated={isAuthenticated}
-      onBackHome={() => setActivePage('glossary')}
-      onNavigateToAdvanced={() => setActivePage('glossary-advanced')}
-    />
+    <>
+      {renderSharedHeader()}
+      <GlossaryBasicScreen
+        isAuthenticated={isAuthenticated}
+        onBackHome={() => setActivePage('glossary')}
+        onNavigateToAdvanced={() => setActivePage('glossary-advanced')}
+      />
+    </>
   )
 
   const renderGlossaryAdvanced = () => (
-    <GlossaryAdvancedScreen
-      isAuthenticated={isAuthenticated}
-      onBackHome={() => setActivePage('glossary')}
-      onNavigateToBasic={() => setActivePage('glossary-basic')}
-    />
+    <>
+      {renderSharedHeader()}
+      <GlossaryAdvancedScreen
+        isAuthenticated={isAuthenticated}
+        onBackHome={() => setActivePage('glossary')}
+        onNavigateToBasic={() => setActivePage('glossary-basic')}
+      />
+    </>
   )
 
   const renderSelection = () => (
