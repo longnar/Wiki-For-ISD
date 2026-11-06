@@ -37,9 +37,11 @@
 /* Vùng thiết kế chuẩn tỉ lệ Figma: 814.18px x 960.18px */
 .figma-selection-box {
   position: relative;
-  width: min(814px, 92vw);
-  height: min(960px, 94vh);
+  /* Khóa tỷ lệ chuẩn 814:960 bất kể chiều ngang hay dọc của màn hình */
+  width: min(814px, 92vw, calc((100vh - 60px) * 814 / 960));
+  max-width: 814px;
   aspect-ratio: 814 / 960;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -154,23 +156,22 @@
   outline: none;
 }
 
-/* Nút Admin '+' thêm nhân vật ở cạnh phải (Figma Node 672:891: 94x94px) */
+/* Nút Admin '+' thêm nhân vật ở góc trên bên phải container (an toàn, không tràn mép màn hình) */
 .figma-admin-add-btn {
   position: absolute;
-  top: 50%;
-  right: -70px;
-  transform: translateY(-50%);
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  top: 18px;
+  right: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.6);
   color: #fff;
-  font-size: 44px;
+  font-size: 36px;
   line-height: 1;
   font-weight: 300;
   cursor: pointer;
-  z-index: 10;
+  z-index: 20;
   display: grid;
   place-items: center;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -179,9 +180,9 @@
 }
 
 .figma-admin-add-btn:hover {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   color: #0f172a;
-  transform: translateY(-50%) scale(1.1);
+  transform: scale(1.08);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 15px rgba(255, 255, 255, 0.6);
 }
 
@@ -223,8 +224,8 @@
 
 .figma-showcase-layout {
   display: grid;
-  grid-template-columns: minmax(420px, 560px) 1fr 100px;
-  gap: 32px;
+  grid-template-columns: minmax(340px, 500px) 1fr 90px;
+  gap: clamp(16px, 2.5vw, 32px);
   align-items: center;
   min-height: calc(100vh - 120px);
 }
@@ -1161,3 +1162,135 @@
   color: #ffffff;
 }
 
+/* =========================================================
+   RESPONSIVE MEDIA QUERIES FOR SELECTION & SHOWCASE SCREENS
+   ========================================================= */
+
+/* Khi chiều rộng màn hình <= 1200px: Chuyển Showcase từ 3 cột sang 2 cột, dải tướng chuyển xuống dưới */
+@media (max-width: 1200px) {
+  .figma-showcase-layout {
+    grid-template-columns: minmax(320px, 440px) 1fr;
+    gap: 20px;
+  }
+
+  .figma-showcase-sidebar-roster {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    max-height: none;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    padding-top: 4px;
+    justify-content: flex-start;
+  }
+
+  .figma-mini-slot {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+  }
+}
+
+/* Khi chiều rộng màn hình <= 860px (Tablet / Cửa sổ chia đôi): Xếp chồng các khối */
+@media (max-width: 860px) {
+  .figma-showcase-screen {
+    padding: 16px 14px;
+    min-height: 100vh;
+    height: auto;
+  }
+
+  .figma-showcase-layout {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 20px;
+    min-height: auto;
+  }
+
+  .figma-showcase-info-card {
+    padding: 28px 20px;
+    border-radius: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .figma-showcase-art-panel {
+    height: 48vh;
+    max-height: 420px;
+    width: 100%;
+  }
+
+  .figma-more-info-btn {
+    margin-top: 24px;
+    width: 100%;
+    height: 64px;
+    font-size: 24px;
+    border-radius: 18px;
+  }
+
+  .figma-selection-screen {
+    padding: 10px 8px;
+  }
+
+  .figma-admin-add-btn {
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 30px;
+  }
+}
+
+/* Khi chiều rộng màn hình <= 480px (Mobile nhỏ) */
+@media (max-width: 480px) {
+  .figma-showcase-screen {
+    padding: 12px 10px;
+  }
+
+  .figma-showcase-char-name {
+    font-size: 30px;
+    margin: 8px 0 16px;
+  }
+
+  .figma-showcase-props {
+    font-size: 15px;
+    gap: 10px;
+  }
+
+  .figma-mini-slot {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+  }
+}
+
+/* Khi chiều cao màn hình nhỏ (Low-height viewport như laptop 1366x768 scale 125%/150%) */
+@media (max-height: 720px) {
+  .figma-selection-stage {
+    min-height: calc(100vh - 20px);
+    padding: 4px 0;
+  }
+
+  .figma-showcase-screen {
+    padding: 16px 24px;
+  }
+
+  .figma-showcase-layout {
+    min-height: auto;
+    gap: 16px;
+  }
+
+  .figma-showcase-art-panel {
+    height: 70vh;
+  }
+
+  .figma-showcase-info-card {
+    padding: 24px 28px;
+  }
+
+  .figma-more-info-btn {
+    margin-top: 18px;
+    height: 60px;
+    font-size: 24px;
+  }
+}

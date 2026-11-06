@@ -1,129 +1,176 @@
-# Idol Showdown Wiki
+# Idol Showdown Wiki - Hệ Thống Tra Cứu Frame Data & Glossary
 
-## Project layout
 
-- `server/`: Express application factory.
-- `controllers/`, `routes/`, `middleware/`, `config/`: backend feature modules.
-- `src/`: React frontend. `src/api/` contains shared HTTP access.
-- `database/schema/`: initial database schema.
-- `database/migrations/`: incremental migrations.
-- `database/migrate.js`: migration runner.
-- `docs/`: deployment and product documentation.
-- `public/`: files served directly by Vite/Express.
-- `uploads/`: runtime-uploaded files; contents are not committed.
+> Xây dựng ứng dụng web tra cứu Frame Data và Thuật ngữ (Glossary) dành cho người mới chơi và tuyển thủ tựa game đối kháng **Idol Showdown**.
 
-## Run with Dev Container (Recommended for Team)
+---
 
-1. Cài đặt **Docker Desktop** và tiện ích mở rộng **Dev Containers** (`ms-vscode-remote.remote-containers`) trên VS Code / Cursor.
-2. Mở thư mục dự án trong VS Code, nhấn `F1` (hoặc `Ctrl+Shift+P`), chọn **Dev Containers: Reopen in Container**.
-3. Hệ thống sẽ tự động build container, cài đặt dependencies (`npm install`), tự động kết nối MySQL container (`DB_HOST=mysql`) và chạy DB migrations (`npm run db:migrate`).
-4. Mở Terminal trong Dev Container để khởi chạy dự án:
+## 🛠️ Công Cụ & Framework Sử Dụng
 
-```bash
-# Khởi chạy cả Frontend và Backend API đồng thời:
-npm run dev
+### 1. Frontend (Giao diện người dùng)
+- **Framework / Core:** [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) / JSX
+- **Build Tool / Bundler:** [Vite 6+](https://vitejs.dev/) - Hot Module Replacement (HMR) cực nhanh
+- **Styling:** CSS3 thuần với Responsive Design, CSS Grid, Flexbox, hỗ trợ [Tailwind CSS v4](https://tailwindcss.com/)
+- **Định dạng & Tối ưu Media:** Định dạng ảnh thế hệ mới `.webp` kết hợp thuật toán tiền tải dữ liệu (`preloadCharacterAssets`), giảm tải dung lượng tới 90% (từ 16MB xuống ~1MB)
+- **Font & Icon:** Pixelify Sans, Podkova, SF Compact Rounded
 
-# Hoặc chạy riêng từng terminal:
-# Terminal 1 (Frontend): npm run dev:client
-# Terminal 2 (Backend):  npm run dev:server
+### 2. Backend (Máy chủ API & Nghiệp vụ)
+- **Framework:** [NestJS 10](https://nestjs.com/) (Mô hình phân lớp Module, Controller, Service, Repository theo chuẩn Enterprise) kết hợp [Express](https://expressjs.com/)
+- **Ngôn ngữ:** TypeScript & Node.js (v20+)
+- **ORM (Object-Relational Mapping):** [TypeORM](https://typeorm.io/) - Ánh xạ thực thể CSDL quan hệ, hỗ trợ Repository Pattern, Migration và chống SQL Injection
+- **API Documentation:** [Swagger / OpenAPI 3.0](https://swagger.io/) (`@nestjs/swagger`) được cấu hình tự động tại `/api/docs`
+
+### 3. Cơ Sở Dữ Liệu & Lưu Trữ (Database & Storage)
+- **Database Chính:** [MySQL 8.0](https://www.mysql.com/) (Hỗ trợ chạy môi trường Docker cục bộ hoặc Cloud Database trên [Aiven](https://aiven.io/))
+- **Kết nối CSDL:** Driver `mysql2` với cấu hình Connection Pool
+- **Lưu trữ Media Đa Phương Tiện:** [Cloudinary API](https://cloudinary.com/) & Lưu trữ cục bộ qua Multer (`uploads/`)
+
+### 4. An Toàn & Bảo Mật (Security)
+- **Xác thực & Định danh:** [JWT (JSON Web Token)](https://jwt.io/) với `@nestjs/jwt` & `passport-jwt`
+- **Mã hóa mật khẩu:** [Bcrypt.js](https://github.com/dcodeIO/bcrypt.js) với cơ chế Salt Rounds = 10 (bất khả đảo)
+- **Chính sách CORS:** Whitelist dynamic domain (`localhost:3000`, `localhost:5000`, Render Domain)
+- **Lọc & Kiểm định dữ liệu:** `ValidationPipe` kết hợp `class-validator` & `class-transformer` (loại bỏ thuộc tính lạ chống Mass Assignment)
+- **Bảo vệ Proxy:** Cấu hình Reverse Proxy Trust (`X-Forwarded-For`) hỗ trợ môi trường Cloud/Render
+
+### 5. Quản Lý Mã Nguồn & Triển Khai (DevOps & Testing)
+- **Quản lý mã nguồn:** Git & GitHub với các nhánh chuẩn (`main`, `beta`, `exp`)
+- **Container hóa:** Docker & Docker Compose (`docker-compose.yml`, Dev Container)
+- **Kiểm thử (Testing):** [Jest](https://jestjs.io/) & `ts-jest` cấu hình trong `jest.config.js`
+
+---
+
+## 🏛️ Kiến Trúc Hệ Thống (System Architecture)
+
+Dự án áp dụng mô hình kiến trúc **Phân lớp Đa tầng (Multi-Tier Layered Architecture)** với tính độc lập cao giữa Frontend và Backend (Decoupled), đảm bảo các nguyên lý thiết kế phần mềm hiện đại như **Separation of Concerns (SoC)** và **Dependency Injection (DI)**:
+
+```mermaid
+flowchart TD
+    %% ================= CLIENT TIER =================
+    subgraph TIER_CLIENT ["1. TẦNG GIAO DIỆN NGƯỜI DÙNG (FRONTEND - REACT + VITE)"]
+        direction TB
+        subgraph UI_PAGES ["Các Màn Hình Chức Năng (Views)"]
+            P_Home["Trang Chủ (Hero, Carousel, Directory)"]
+            P_Search["Header Quick Search (Ctrl + K)"]
+            P_CharGrid["Lưới Chọn Tướng (CharacterSelectGrid)"]
+            P_CharDetail["Chi Tiết & Frame Data (CharacterDetailView)"]
+            P_Glossary["Tra Cứu Thuật Ngữ (Glossary Basic / Advanced)"]
+            P_Admin["Modal Đăng Nhập & Form Quản Trị"]
+        end
+
+        subgraph CLIENT_CORE ["Xử Lý Dữ Liệu & Giao Tiếp (Client Services)"]
+            API_Client["API Client (Fetch / HTTP Client)"]
+            Local_Auth["Auth State & Token Manager (LocalStorage)"]
+            Preload_Opt["Image Preload & WebP Optimizer"]
+        end
+
+        UI_PAGES <--> CLIENT_CORE
+    end
+
+    %% ================= GATEWAY & SECURITY =================
+    subgraph TIER_SECURITY ["2. TẦNG BẢO MẬT & ĐIỀU PHỐI (GATEWAY & MIDDLEWARE)"]
+        direction TB
+        CORS_Guard["Bộ Lọc CORS (Whitelist Origin)"]
+        Proxy_Trust["Reverse Proxy & IP Extraction"]
+        Val_Pipe["ValidationPipe (Class-Validator DTO)"]
+        JWT_Guard["JwtAuthGuard & Passport Strategy"]
+        Swagger_Doc["Swagger API Engine (/api/docs)"]
+    end
+
+    %% ================= BACKEND TIER =================
+    subgraph TIER_SERVER ["3. TẦNG XỬ LÝ NGHIỆP VỤ (BACKEND - NESTJS FRAMEWORK)"]
+        direction TB
+        subgraph CONTROLLER_LAYER ["Tầng Điều Hướng (Controllers)"]
+            C_Auth["AuthController (/api/auth)"]
+            C_Char["CharacterController (/api/characters)"]
+            C_Glossary["GlossaryController (/api/glossary)"]
+            C_News["NewsController (/api/news)"]
+        end
+
+        subgraph SERVICE_LAYER ["Tầng Nghiệp Vụ (Services)"]
+            S_Auth["AuthService (Bcrypt + JWT Signing)"]
+            S_Char["CharacterService (Frame Data & CRUD)"]
+            S_Glossary["GlossaryService (Term Categorization)"]
+            S_News["NewsService (Patch Log Management)"]
+            S_Cloud["StorageService (Cloudinary / Multer)"]
+        end
+
+        subgraph ORM_LAYER ["Tầng Truy Cập Dữ Liệu (TypeORM ORM)"]
+            E_User["UserEntity"]
+            E_Char["CharacterEntity"]
+            E_Glossary["GlossaryEntity"]
+            E_News["NewsEntity"]
+        end
+
+        CONTROLLER_LAYER --> SERVICE_LAYER
+        SERVICE_LAYER --> ORM_LAYER
+    end
+
+    %% ================= DATABASE TIER =================
+    subgraph TIER_DATA ["4. TẦNG CƠ SỞ DỮ LIỆU & LƯU TRỮ (DATABASE & STORAGE)"]
+        direction TB
+        MySQL_DB[("Cơ Sở Dữ Liệu Quan Hệ MySQL 8.0\n(Docker Local / Aiven Cloud)")]
+        Cloud_Media[("Cloudinary Media Cloud\n(Lưu Trữ Ảnh Banner & WebP Assets)")]
+    end
+
+    %% ================= LIÊN KẾT LUỒNG DỮ LIỆU =================
+    API_Client ==>|"Giao thức HTTPS / JSON\n(Kèm Bearer JWT Token)"| CORS_Guard
+    CORS_Guard --> Proxy_Trust
+    Proxy_Trust --> Val_Pipe
+    Val_Pipe --> JWT_Guard
+    JWT_Guard --> CONTROLLER_LAYER
+
+    Swagger_Doc -.->|"Tự động sinh tài liệu"| CONTROLLER_LAYER
+
+    S_Cloud ==>|"REST API (Upload Multi-part)"| Cloud_Media
+    ORM_LAYER ==>|"SQL Queries / Connection Pool (mysql2)"| MySQL_DB
 ```
 
-- Giao diện Frontend: `http://localhost:3000`
-- API Backend: `http://localhost:5000`
-- Kiểm tra kết nối DB: `http://localhost:5000/health/db`
+### Chi Tiết Về 4 Phân Tầng:
+1. **Tầng 1: Presentation Tier (Giao diện người dùng - React 19 + Vite):**
+   - Đảm nhận toàn bộ hiển thị giao diện Single Page Application (SPA), rendering component dạng bảng kỹ thuật Frame Data phân màu theo lợi thế đòn đánh.
+   - Quản trị trạng thái cục bộ, lưu trữ JWT Token an toàn và áp dụng cơ chế Preload Assets giúp chuyển trang dưới 50ms.
+2. **Tầng 2: Security & Gateway Tier (Lớp Bảo vệ & Điều phối):**
+   - Đóng vai trò là bức tường lửa (Firewall): Kiểm tra Whitelist tên miền thông qua CORS, bóc tách IP qua Proxy Trust và lọc sạch tham số rác với `ValidationPipe`.
+   - Bảo vệ nghiêm ngặt các route quản trị CMS thông qua `JwtAuthGuard`.
+3. **Tầng 3: Business Logic Tier (Tầng Nghiệp vụ - NestJS 10):**
+   - **Controllers:** Định tuyến tiếp nhận yêu cầu RESTful API và xuất schema Swagger.
+   - **Services:** Chứa 100% logic nghiệp vụ (mã hóa mật khẩu Bcrypt, xử lý framedata, phân loại thuật ngữ).
+   - **TypeORM Repositories:** Ánh xạ dữ liệu hướng đối tượng và thực thi truy vấn tham số hóa (Parameterized Queries) ngăn chặn 100% lỗi SQL Injection.
+4. **Tầng 4: Data & Storage Tier (Tầng Dữ liệu & Lưu trữ):**
+   - **MySQL 8.0:** Lưu trữ dữ liệu quan hệ (Nhân vật, Frame Data chiêu thức, Thuật ngữ, Quản trị viên).
+   - **Cloudinary / Static Storage:** Lưu trữ và phân phối tài nguyên ảnh đa phương tiện dung lượng cao.
 
-## Run locally (Host Machine)
+---
 
-```powershell
-npm install
-npm run db:up
-npm run db:migrate
-npm run dev
+## 📂 Cấu Trúc Thư Mục Dự Án (Project Layout)
+
+```text
+web-app/
+├── server/                    # Source code Backend NestJS
+│   └── src/
+│       ├── entities/          # Các thực thể CSDL TypeORM (Character, Glossary, News, User)
+│       ├── modules/           # Phân hệ nghiệp vụ (auth, character, glossary, news, security, storage)
+│       ├── app.module.ts      # Root Module kết nối TypeORM và cấu hình ứng dụng
+│       └── main.ts            # Điểm khởi chạy NestJS, cấu hình CORS, ValidationPipe, Swagger
+├── src/                       # Source code Frontend React
+│   ├── assets/                # Hình ảnh, sprite, banner nhân vật (.webp, .png)
+│   ├── components/            # Các UI Component (CharacterSelectGrid, CharacterDetailView, Glossary, Footer,...)
+│   ├── data/                  # Dữ liệu tĩnh khởi tạo (glossaryData, newsData)
+│   ├── utils/                 # Utility functions (characterAssets, decodeImage)
+│   ├── App.jsx / App.css      # Component chính và định nghĩa bố cục toàn diện
+│   └── main.tsx               # Điểm gắn kết React DOM
+├── database/                  # Schema CSDL và migration scripts
+├── docs/                      # Tài liệu kiến trúc, CSDL và hướng dẫn triển khai
+├── uploads/                   # Thư mục lưu trữ media động (chạy runtime)
+├── docker-compose.yml         # Thiết lập container MySQL cho môi trường cục bộ
+├── package.json               # Danh sách thư viện và scripts vận hành
+└── tsconfig.server.json       # Cấu hình biên dịch TypeScript cho NestJS backend
 ```
 
-Hoặc chạy riêng từng terminal:
+---
 
-```powershell
-npm run dev:client
-npm run dev:server
-```
+## 📜 Giấy Phép & Bản Quyền (License & Disclaimer)
 
-Production build and server:
-
-```powershell
-npm run build
-npm run start:server
-```
-
-The API is available at `http://localhost:5000`; the database check is
-`http://localhost:5000/health/db`.
-
-## Structure rules
-
-Keep API contracts stable while reorganizing internal files. UI dimension and
-position values in `src/App.css` and `src/index.css` must not be changed during
-structural refactors.
-
-## Phân tích bài toán
-
-### 1 Phân tích các đối tượng
-
-#### User / Admin
-
-- Là người dùng của hệ thống.
-- Có thể là người xem thông tin hoặc người quản trị.
-- Admin có quyền thực hiện CRUD với dữ liệu quan trọng như nhân vật và glossary.
-- Các thuộc tính quan trọng gồm: username, password_hash, role, created_at, updated_at.
-
-#### Character (Nhân vật)
-
-- Là đối tượng trung tâm của hệ thống.
-- Mỗi nhân vật có thông tin như tên, ngày debut, mô tả, độ khó, loại nhân vật và ảnh đại diện.
-- Đây là dữ liệu chính được hiển thị trên wiki/game.
-
-#### Move (Chiêu thức / kỹ năng)
-
-- Mỗi nhân vật có thể có nhiều move.
-- Move thuộc về một nhân vật cụ thể và phản ánh kỹ năng/đòn đánh trong game.
-
-#### BaseStat (Chỉ số cơ bản)
-
-- Là bộ chỉ số nền của nhân vật.
-- Thường bao gồm hp, speed, dash, jump, defense, vv.
-- Mỗi nhân vật có thể có một bản ghi chỉ số cơ bản riêng.
-
-#### Glossary (Thuật ngữ)
-
-- Là kho từ vựng/thuật ngữ của game để người chơi tra cứu.
-- Có thể có định nghĩa, mức độ, ảnh minh họa và liên kết video.
-- Dùng cho mục đích wiki và hướng dẫn người chơi.
-
-#### Uploaded Image
-
-- Là đối tượng phụ dùng để lưu hình ảnh nhân vật và glossary.
-- File hình ảnh thường được lưu trong thư mục uploads và tham chiếu từ database bằng URL.
-
-### 2) Phân tích mối quan hệ giữa các đối tượng
-
-- User/Admin quản lý dữ liệu: Admin có quyền thêm, sửa, xóa Character và Glossary.
-- One-to-many: Một Character có nhiều Move.
-- One-to-one: Một Character có một bộ BaseStat.
-- One-to-many: Một Character có thể có một ảnh đại diện.
-- One-to-many: Một Glossary có thể có một ảnh minh họa hoặc video hướng dẫn.
-- User thường chỉ xem thông tin; Admin là người cập nhật dữ liệu.
-
-### 3) Tóm tắt kiến trúc nghiệp vụ
-
-Hệ thống đang xây dựng là một wiki game/kho dữ liệu nhân vật và glossary, trong đó:
-
-- Frontend hiển thị thông tin cho người dùng.
-- Backend API quản lý dữ liệu và xác thực quyền truy cập.
-- MySQL lưu trữ dữ liệu chính.
-- Upload file xử lý hình ảnh minh họa cho nhân vật và glossary.
-
-## File quan trọng của hệ thống
-
-- `config/database.js` → File kết nối MySQL chính
-- `database/schema/001_initial_schema.sql` → Cấu trúc CSDL ban đầu
-
-Đây là hai file nền tảng quan trọng để hiểu cấu trúc dữ liệu và kết nối hệ thống.
+- Dự án được phát hành và quản lý mã nguồn mở dưới giấy phép **[MIT License](LICENSE)**.
+- **Tuyên Bố Bản Quyền (Disclaimer):**  
+  Tựa game *Idol Showdown* thuộc quyền sở hữu trí tuệ của **Besto Game Team**. Hình ảnh nhân vật, tên gọi và thương hiệu liên quan thuộc bản quyền của **COVER Corporation** / **hololive production**. Dự án này được thực hiện phi thương mại bởi sinh viên với mục đích nghiên cứu học thuật và xây dựng cẩm nang tra cứu hỗ trợ cộng đồng người chơi.

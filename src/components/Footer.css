@@ -1,0 +1,171 @@
+.main-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  background: rgba(10, 16, 26, 0.95);
+  border-top: 2px solid #000000;
+  color: #cfd8dc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  position: relative;
+  z-index: 5;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 20px 28px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+  gap: 28px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-brand .footer-logo-wrap {
+  margin-bottom: 14px;
+}
+
+.footer-logo {
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+}
+
+.footer-desc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #90a4ae;
+  margin-bottom: 16px;
+}
+
+.footer-version-tag {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 4px 10px;
+  background: #141c2b;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: #81d4fa;
+  font-family: monospace;
+}
+
+.footer-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 8px;
+}
+
+.footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links li a,
+.footer-links li button {
+  color: #b0bec5;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.92rem;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.18s ease, transform 0.18s ease;
+  display: inline-block;
+}
+
+.footer-links li a:hover,
+.footer-links li button:hover {
+  color: #ffffff;
+  transform: translateX(4px);
+  text-decoration: underline;
+}
+
+.footer-license-text {
+  font-size: 0.88rem;
+  color: #78909c;
+}
+
+.footer-disclaimer {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #78909c;
+  background: #0d131e;
+  padding: 10px 12px;
+  border: 1px solid #000000;
+  border-radius: 4px;
+}
+
+.footer-disclaimer strong {
+  color: #b0bec5;
+}
+
+/* Dải chân trang cuối */
+.footer-bottom-bar {
+  border-top: 1px solid #000000;
+  background: #070b12;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.footer-copyright {
+  font-size: 0.82rem;
+  color: #607d8b;
+  margin: 0;
+}
+
+.footer-back-to-top {
+  background: #141f30;
+  border: 1px solid #000000;
+  color: #e2e8f0;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.footer-back-to-top:hover {
+  background: #1e2e47;
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .footer-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 580px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 32px 18px 24px;
+  }
+
+  .footer-bottom-bar {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}

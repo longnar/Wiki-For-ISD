@@ -15,7 +15,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px 20px;
+  padding: 84px 20px 24px;
   box-sizing: border-box;
   background: transparent;
   font-family: inherit;
@@ -27,7 +27,7 @@
 /* Nút Back quay lại màn hình Showcase - Flat Glassmorphism */
 .figma-detail-back-btn {
   position: absolute;
-  top: 20px;
+  top: 80px;
   left: 32px;
   display: inline-flex;
   align-items: center;
@@ -61,6 +61,7 @@
 .figma-detail-container {
   width: min(1820px, 98vw);
   height: min(920px, 94vh);
+  min-height: min(720px, 85vh);
   background: rgba(20, 60, 92, 0.42);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1528,19 +1529,113 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-/* Responsive adjustments */
+/* =========================================================
+   RESPONSIVE ADJUSTMENTS FOR FRAME DATA & DETAIL VIEW
+   ========================================================= */
+
 @media (max-width: 1200px) {
+  .figma-detail-screen {
+    padding: 18px 12px;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+
+  .figma-detail-back-btn {
+    position: relative;
+    top: auto;
+    left: auto;
+    align-self: flex-start;
+    margin-bottom: 14px;
+  }
+
+  .figma-detail-container {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    padding: 20px 22px;
+    overflow: visible;
+    border-radius: 26px;
+  }
+
   .figma-detail-main-layout {
     flex-direction: column;
+    min-height: auto;
+    overflow: visible;
   }
+
   .figma-detail-stats-panel.figma-teal-card {
     width: 100%;
     height: auto;
-    max-height: 320px;
+    max-height: 380px;
+    overflow-y: auto;
   }
+
+  .figma-detail-framedata-panel {
+    height: auto;
+    min-height: 520px;
+    overflow: visible;
+  }
+}
+
+/* Khi chiều cao màn hình nhỏ (Laptop 1366x768 hoặc Windows Display Scale 125%/150%) */
+@media (max-height: 820px) {
+  .figma-detail-screen {
+    justify-content: flex-start;
+    padding-top: 16px;
+    padding-bottom: 24px;
+    overflow-y: auto;
+  }
+
   .figma-detail-container {
     height: auto;
-    min-height: 92vh;
+    min-height: calc(100vh - 40px);
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* Mobile & màn hình siêu hẹp (< 720px) */
+@media (max-width: 720px) {
+  .figma-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .figma-detail-header-left {
+    gap: 12px;
+  }
+
+  .figma-detail-char-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .figma-detail-char-name {
+    font-size: 24px;
+  }
+
+  .figma-detail-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .figma-detail-search-input {
+    width: 100%;
+  }
+
+  .figma-detail-filter-group {
+    overflow-x: auto;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .figma-view-mode-group {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
   }
 }
 

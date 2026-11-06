@@ -1,7 +1,7 @@
-@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&family=Podkova:wght@500&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&family=Podkova:wght@500&display=swap");
 
 :root {
-  --content-width: min(1547px, calc(100% - 40px));
+  --content-width: min(1320px, calc(100% - 48px));
   --cyan: #47c2e1;
   --white: #fffbfb;
   --sky-tint: #9ad9f5;
@@ -101,18 +101,55 @@ img {
 
 .page-shell {
   min-height: 100vh;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: rgba(0, 0, 0, 0.25);
+}
+
+.page-shell > main {
+  flex: 1 0 auto;
 }
 
 .site-header {
   position: fixed;
-  z-index: 10;
+  z-index: 100;
   top: 0;
   width: 100%;
-  height: 74px;
-  background: rgba(98, 185, 234, 0.57);
-  backdrop-filter: blur(3px);
+  height: 64px;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 3.5vw, 60px);
+  box-sizing: border-box;
+}
+
+.header-brand-btn {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.header-brand-btn:hover {
+  transform: scale(1.04);
+  filter: drop-shadow(0 0 10px rgba(71, 194, 225, 0.6));
+}
+
+.header-brand-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .main-nav {
@@ -120,13 +157,13 @@ img {
   justify-content: flex-end;
   align-items: center;
   height: 100%;
-  padding: 0 clamp(24px, 7.1vw, 136px);
-  font: 500 32px/1 "Pixelify Sans", monospace;
+  padding: 0;
+  font: 500 22px/1 "Pixelify Sans", monospace;
 }
 
 .nav-link,
 .login-trigger {
-  padding: 0 20px;
+  padding: 0 16px;
   color: #fff;
   text-decoration: none;
   border-left: 1px solid rgba(255, 255, 255, 0.85);
@@ -153,128 +190,163 @@ img {
 
 .hero {
   position: relative;
-  min-height: 640px;
+  width: 100%;
+  aspect-ratio: 1500 / 500;
+  min-height: clamp(380px, 34vw, 500px);
+  max-height: 520px;
   isolation: isolate;
+  display: flex;
+  align-items: stretch;
 }
 
 .hero-art {
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: center / cover no-repeat;
+  background-position: right center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .hero-overlay {
-  position: absolute;
-  inset: 0 auto 0 max(0px, calc((100% - 1547px) / 2 - 13px));
-  z-index: -1;
-  width: min(519px, 32vw);
-  background: rgba(0, 0, 0, 0.65);
+  position: relative;
+  z-index: 1;
+  width: min(440px, max(320px, 30vw));
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(32px, 4.5vh, 60px) clamp(20px, 2.5vw, 36px);
+  box-sizing: border-box;
+  margin-left: max(0px, calc((100% - 1320px) / 2));
 }
 
 .hero-content {
-  width: min(407px, calc(100% - 48px));
-  margin-left: max(24px, calc((100% - 1547px) / 2 + 52px));
-  padding-top: 83px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
 }
 
 .game-logo {
-  margin-left: -10px;
   display: block;
-  width: min(423px, 100%);
+  width: min(340px, 100%);
   height: auto;
+  margin-left: -4px;
 }
 
 .game-meta {
-  margin: 35px 0 0;
-  font: 500 24px/1.12 Podkova, serif;
+  margin: 18px 0 0;
+  font: 500 clamp(15px, 1.1vw, 20px)/1.25 Podkova, serif;
+  color: #fff;
 }
 
 .download-button {
-  display: grid;
+  display: inline-grid;
   place-items: center;
-  width: 241px;
-  height: 66px;
-  margin-top: 67px;
-  margin-left: 120px;
+  width: clamp(170px, 13vw, 210px);
+  height: clamp(46px, 3.6vw, 54px);
+  margin-top: clamp(20px, 3vh, 36px);
+  margin-left: 0;
+  align-self: center;
   color: #000;
-  background: rgba(71, 194, 225, 0.81);
-  border-radius: 20px;
-  font: 400 32px/1 "Pixelify Sans", monospace;
+  background: rgba(71, 194, 225, 0.88);
+  border-radius: 16px;
+  font: 400 clamp(19px, 1.5vw, 26px)/1 "Pixelify Sans", monospace;
   text-decoration: none;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(71, 194, 225, 0.4);
 }
 
 .download-button:hover,
 .download-button:focus-visible {
   background: #7be3fa;
-  transform: translateY(-3px);
-}
-
-.intro,
-.welcome {
-  width: 1000px;
-  margin-left: 100px;
-  /* margin-inline: auto; */
-  text-align: center;
-  background: rgba(0, 0, 0, 0.42);
-  padding: 132px 5% 105px;
-  color: #fff;
-  font-size: clamp(26px, 2.5vw, 24px);
-  font-weight: 500;
-}
-
-.intro {
-  padding: 132px 5% 105px;
-  line-height: 1.35;
-}
-
-.welcome {
-  padding: 0 5% 100px;
-  line-height: 1.26;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 0 0 30px 30px;
-}
-
-.welcome p {
-  margin: 0 0 42px;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(71, 194, 225, 0.6);
 }
 
 .home-lower {
   display: grid;
-  grid-template-columns: minmax(0, 1000px) minmax(360px, 1fr);
-  align-items: start;
-  gap: clamp(32px, 5vw, 110px);
-  margin-left: 100px;
-  padding-right: 60px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, clamp(320px, 26vw, 420px));
+  align-items: stretch;
+  gap: clamp(20px, 3vw, 60px);
+  width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 2.5vw, 36px);
+  box-sizing: border-box;
+}
+
+.home-copy {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .home-copy .intro,
-.home-copy .welcome {
+.home-copy .welcome,
+.intro,
+.welcome {
   width: 100%;
   margin-left: 0;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.42);
+  padding: clamp(28px, 3.2vw, 48px) clamp(20px, 2.5vw, 40px);
+  color: #fff;
+  font-size: clamp(15px, 1.1vw, 19px);
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.intro {
+  line-height: 1.45;
+  border-radius: 20px 20px 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 0 0 24px 24px;
+  padding-bottom: clamp(28px, 3.2vw, 48px);
+}
+
+.welcome p {
+  margin: 0 0 22px;
+}
+
+.welcome p:last-child {
+  margin-bottom: 0;
 }
 
 .character-carousel {
   position: sticky;
-  top: 110px;
+  top: 80px;
   min-width: 0;
-  padding-top: 10px;
+  padding-top: 6px;
   text-align: center;
+  width: 100%;
 }
 
 .carousel-frame {
   position: relative;
   display: grid;
   place-items: center;
-  width: 560px;
-  min-height: 700px;
+  width: min(420px, 100%);
+  aspect-ratio: 540 / 690;
   margin: 0 auto;
   overflow: hidden;
   border: 4px solid rgba(255, 255, 255, 0.78);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.829);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.83);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
 .carousel-track {
@@ -289,7 +361,7 @@ img {
   top: 0;
   left: 0;
   width: 100%;
-  height: 730px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -318,33 +390,34 @@ img {
 }
 
 .carousel-caption {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   color: #fff;
-  font: 500 30px/1 "Pixelify Sans", monospace;
+  font: 500 clamp(18px, 1.6vw, 24px)/1 "Pixelify Sans", monospace;
   text-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
 }
 
 .directory {
   display: flex;
   justify-content: center;
-  gap: clamp(40px, 13vw, 254px);
+  gap: clamp(24px, 6vw, 100px);
   width: var(--content-width);
   margin: 0 auto;
-  padding: 15px 0 120px;
+  padding: 24px 20px 60px;
+  box-sizing: border-box;
 }
 
 .directory-card {
   display: grid;
   place-items: center;
-  width: min(400px, 42%);
-  min-height: 125px;
-  padding: 20px;
+  width: min(300px, 42%);
+  min-height: clamp(64px, 5.5vw, 84px);
+  padding: 12px 18px;
   color: #fff;
   background: #000;
-  border: 5px solid #fff;
-  border-radius: 25px;
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-  font: 400 clamp(36px, 3.3vw, 64px)/1 "Pixelify Sans", monospace;
+  border: 3px solid #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  font: 400 clamp(22px, 2.2vw, 36px)/1 "Pixelify Sans", monospace;
   text-decoration: none;
   transition: transform 0.2s ease, background 0.2s ease;
 }
@@ -352,10 +425,10 @@ img {
 .directory-card:hover,
 .directory-card:focus-visible {
   background: #123d54;
-  transform: translateY(-5px);
+  transform: translateY(-4px);
 }
 
-footer {
+footer:not(.main-footer) {
   height: 1px;
 }
 
@@ -1326,13 +1399,19 @@ footer {
   }
 
   .hero {
-    min-height: 520px;
+    min-height: 480px;
+  }
+
+  .hero-overlay {
+    width: 100%;
+    margin-left: 0;
+    padding: 32px 20px 44px;
   }
 
   .hero-content {
-    width: min(380px, calc(100% - 24px));
-    margin-left: 16px;
-    padding-top: 96px;
+    width: 100%;
+    margin-left: 0;
+    padding-top: 0;
   }
 
   .download-button {
@@ -1786,3 +1865,4 @@ footer {
     font-size: 18px;
   }
 }
+

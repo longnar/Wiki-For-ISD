@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { characterApi } from '../../api/character.api';
 import brandIcon from '../../assets/branding/IdolShowdownIcon.png';
 import selectionFrame from '../../assets/decorative/selection-frame.svg';
 import selectionPolygon from '../../assets/decorative/selection-polygon.svg';
-import { getCharacterArt, getCharacterTpArt } from '../../utils/characterAssets';
+import { getCharacterArt, getCharacterTpArt, preloadCharacterAssets } from '../../utils/characterAssets';
 import { CHARACTER_SELECT_BUTTONS, FIGMA_BUTTON_CLUSTER } from '../../utils/characterButtons';
 import CharacterDetailView from './CharacterDetailView';
 
@@ -130,6 +130,36 @@ export default function CharacterSelectGrid({
   const [hoveredButtonKey, setHoveredButtonKey] = useState(null);
   const [activeChar, setActiveChar] = useState(null);
 
+  // Quản lý danh sách nhân vật có state nội bộ để cập nhật tức thì ngay sau khi lưu
+  const [charList, setCharList] = useState(characters);
+
+  useEffect(() => {
+    if (Array.isArray(characters) && characters.length > 0) {
+      setCharList(characters);
+    }
+  }, [characters]);
+
+  useEffect(() => {
+    preloadCharacterAssets();
+  }, []);
+
+  // Ánh xạ key nút bấm với ID chuẩn trong Database
+  const KEY_TO_ID_MAP = {
+    fubuki: 1,
+    korone: 2,
+    sora: 3,
+    ayame: 4,
+    suisei: 5,
+    coco: 6,
+    botan: 7,
+    aki: 8,
+    pekora: 9,
+    ina: 10,
+    ollie: 11,
+    koyori: 12,
+    biboo: 13
+  };
+
   // State chỉnh sửa thông tin nhân vật (Admin) ở màn hình Showcase
   const [isEditingChar, setIsEditingChar] = useState(false);
   const [charForm, setCharForm] = useState({
@@ -144,14 +174,25 @@ export default function CharacterSelectGrid({
   // Tìm kiếm thông tin character tương ứng từ danh sách prop characters (DB) hoặc fallback
   const resolveCharacter = (btnConfig) => {
     if (!btnConfig) return null;
-    const fromProps = characters.find(
+    const targetId = KEY_TO_ID_MAP[btnConfig.key];
+    const sourceList = charList.length > 0 ? charList : characters;
+
+    // 1. Khớp ưu tiên theo ID chuẩn
+    if (targetId) {
+      const byId = sourceList.find((c) => Number(c.id) === targetId);
+      if (byId) return byId;
+    }
+
+    // 2. Khớp phụ theo tên hoặc shortName
+    const fromProps = sourceList.find(
       (c) =>
-        c.name?.toLowerCase().includes(btnConfig.shortName.toLowerCase()) ||
-        btnConfig.name.toLowerCase().includes(c.name?.toLowerCase())
+        (btnConfig.shortName && c.name?.toLowerCase().includes(btnConfig.shortName.toLowerCase())) ||
+        (btnConfig.name && btnConfig.name.toLowerCase().includes(c.name?.toLowerCase()))
     );
     if (fromProps) return fromProps;
+
     return DEFAULT_CHARACTERS_INFO[btnConfig.key] || {
-      id: btnConfig.key,
+      id: targetId || btnConfig.key,
       name: btnConfig.name,
       type: 'Fighter',
       difficulty: 3,
@@ -200,16 +241,18 @@ export default function CharacterSelectGrid({
         if (val !== undefined && val !== null) form.append(key, val);
       });
 
+      let updated = null;
       if (currentChar?.id && typeof currentChar.id === 'number') {
         const res = await characterApi.update(currentChar.id, form);
-        const updated = res.character || { ...currentChar, ...charForm };
-        setActiveChar(updated);
-        if (onSelectCharacter) onSelectCharacter(updated);
+        updated = res.character || { ...currentChar, ...charForm };
       } else {
-        const updated = { ...currentChar, ...charForm };
-        setActiveChar(updated);
-        if (onSelectCharacter) onSelectCharacter(updated);
+        updated = { ...currentChar, ...charForm };
       }
+
+      // Cập nhật ngay vào activeChar và danh sách cục bộ charList
+      setActiveChar(updated);
+      setCharList((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      if (onSelectCharacter) onSelectCharacter(updated);
       if (onCharacterUpdated) onCharacterUpdated();
       setIsEditingChar(false);
     } catch (err) {
@@ -226,6 +269,14 @@ export default function CharacterSelectGrid({
         character={currentChar}
         isAuthenticated={isAuthenticated}
         onBack={() => setViewMode('showcase')}
+        onCharacterUpdated={(updatedChar) => {
+          if (updatedChar) {
+            setActiveChar(updatedChar);
+            setCharList((prev) => prev.map((c) => (c.id === updatedChar.id ? updatedChar : c)));
+            if (onSelectCharacter) onSelectCharacter(updatedChar);
+          }
+          if (onCharacterUpdated) onCharacterUpdated();
+        }}
       />
     );
   }
@@ -385,7 +436,13 @@ export default function CharacterSelectGrid({
             {/* Khung giữa: Tranh vẽ nhân vật kích thước lớn (Figma Node 122:13) */}
             <div className="figma-showcase-art-panel">
               {currentArt ? (
-                <img src={currentArt} alt={currentChar?.name} className="figma-showcase-big-art" />
+                <img
+                  src={currentArt}
+                  alt={currentChar?.name}
+                  className="figma-showcase-big-art"
+                  loading="eager"
+                  decoding="async"
+                />
               ) : (
                 <div className="figma-showcase-art-placeholder">{currentChar?.name}</div>
               )}
@@ -403,6 +460,7 @@ export default function CharacterSelectGrid({
                     className={`figma-mini-slot ${isCur ? 'active' : ''}`}
                     onClick={() => {
                       setActiveChar(char);
+                      if (onSelectCharacter) onSelectCharacter(char);
                     }}
                     title={btn.name}
                   >

@@ -18,12 +18,13 @@
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f mysql",
     "db:migrate": "node database/migrate.js",
-    "db:setup": "node database/setup.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "LonGnar",
+  "license": "MIT",
   "type": "commonjs",
   "engines": {
     "node": "20.x"
@@ -47,6 +48,7 @@
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
@@ -68,7 +70,12 @@
     "vite": "^8.2.2"
   },
   "devDependencies": {
+    "@nestjs/testing": "^10.4.22",
+    "@types/jest": "^30.0.0",
     "concurrently": "^10.0.5",
-    "nodemon": "^3.1.14"
+    "jest": "^30.5.2",
+    "nodemon": "^3.1.14",
+    "sharp": "^0.35.5",
+    "ts-jest": "^29.4.15"
   }
 }

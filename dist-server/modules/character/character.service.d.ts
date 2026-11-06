@@ -5,11 +5,13 @@ import { CharacterBaseStat } from '../../entities/character-base-stat.entity';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { CreateMoveDto } from './dto/create-move.dto';
 import { UpsertBaseStatsDto } from './dto/create-move.dto';
+import { StorageService } from '../storage/storage.service';
 export declare class CharacterService {
     private characterRepo;
     private moveRepo;
     private baseStatRepo;
-    constructor(characterRepo: Repository<Character>, moveRepo: Repository<CharacterMove>, baseStatRepo: Repository<CharacterBaseStat>);
+    private storageService;
+    constructor(characterRepo: Repository<Character>, moveRepo: Repository<CharacterMove>, baseStatRepo: Repository<CharacterBaseStat>, storageService: StorageService);
     private deleteUploadedFile;
     getAllCharacters(): Promise<Character[]>;
     getCharacterById(id: number): Promise<Character>;

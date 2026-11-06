@@ -52,6 +52,7 @@
   position: relative;
   width: min(1455px, 94vw);
   height: min(830px, 86vh);
+  min-height: min(650px, 80vh);
   background: rgba(0, 0, 0, 0.54);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -451,18 +452,48 @@
 
 /* Responsive cho màn hình nhỏ hơn 1024px */
 @media (max-width: 1024px) {
+  .figma-news-screen {
+    padding: 16px 12px;
+    justify-content: flex-start;
+  }
+
+  .figma-news-back-btn {
+    position: relative;
+    top: auto;
+    left: auto;
+    align-self: flex-start;
+    margin-bottom: 12px;
+  }
+
   .figma-news-container {
     flex-direction: column;
     height: auto;
-    min-height: 80vh;
+    min-height: auto;
+    padding: 18px 16px;
+    border-radius: 20px;
   }
 
   .figma-news-sidebar {
     width: 100%;
-    max-height: 240px;
+    max-height: 280px;
   }
 
   .figma-news-content-panel {
-    min-height: 480px;
+    min-height: 440px;
   }
 }
+
+@media (max-height: 800px) {
+  .figma-news-screen {
+    justify-content: flex-start;
+    padding-top: 16px;
+    padding-bottom: 24px;
+    overflow-y: auto;
+  }
+
+  .figma-news-container {
+    height: auto;
+    min-height: calc(100vh - 40px);
+  }
+}
+

@@ -1,6 +1,7 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, HttpCode, HttpStatus, Req, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -16,6 +17,15 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Tên đăng nhập hoặc mật khẩu không chính xác.' })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Kiểm tra token hiện tại còn hợp lệ và trả về thông tin người dùng' })
+  @ApiResponse({ status: 401, description: 'Token không hợp lệ hoặc đã hết hạn.' })
+  me(@Req() req: { user: { id: number; username: string; role: string } }) {
+    return req.user;
   }
 
   @Post('register')

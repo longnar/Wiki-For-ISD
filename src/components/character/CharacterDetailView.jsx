@@ -5,7 +5,7 @@ import { getFallbackDetails } from '../../data/characterFallbackData';
 import selectionPolygon from '../../assets/decorative/selection-polygon.svg';
 import './CharacterDetailView.css';
 
-export default function CharacterDetailView({ character, isAuthenticated = false, onBack }) {
+export default function CharacterDetailView({ character, isAuthenticated = false, onBack, onCharacterUpdated }) {
   const fallback = getFallbackDetails(character?.name);
   const [stats, setStats] = useState(fallback.stats);
   const [moves, setMoves] = useState(fallback.moves);
@@ -89,7 +89,9 @@ export default function CharacterDetailView({ character, isAuthenticated = false
         await characterApi.update(character.id, { type: styleInput });
       }
       setCharacterType(styleInput);
+      const updatedChar = { ...character, type: styleInput };
       if (character) character.type = styleInput;
+      if (onCharacterUpdated) onCharacterUpdated(updatedChar);
       setIsEditingStyle(false);
     } catch (err) {
       alert('Không thể lưu phong cách: ' + err.message);
@@ -104,6 +106,7 @@ export default function CharacterDetailView({ character, isAuthenticated = false
         await characterApi.saveBaseStats(character.id, statsForm);
       }
       setStats({ ...statsForm });
+      if (onCharacterUpdated) onCharacterUpdated({ ...character });
       setIsEditingStats(false);
     } catch (err) {
       alert('Không thể lưu chỉ số: ' + err.message);

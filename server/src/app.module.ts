@@ -11,10 +11,14 @@ import { CharacterBaseStat } from './entities/character-base-stat.entity';
 import { Glossary } from './entities/glossary.entity';
 import { SecurityAuditLog } from './entities/security-audit-log.entity';
 
+import { News } from './entities/news.entity';
+
 import { AuthModule } from './modules/auth/auth.module';
 import { CharacterModule } from './modules/character/character.module';
 import { GlossaryModule } from './modules/glossary/glossary.module';
 import { SecurityModule } from './modules/security/security.module';
+import { NewsModule } from './modules/news/news.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -35,7 +39,7 @@ import { AppController } from './app.controller';
           username: configService.get<string>('DB_USER') || 'root',
           password: configService.get<string>('DB_PASSWORD') || '',
           database: configService.get<string>('DB_NAME') || 'idol_showdown_wiki',
-          entities: [User, Character, CharacterMove, CharacterBaseStat, Glossary, SecurityAuditLog],
+          entities: [User, Character, CharacterMove, CharacterBaseStat, Glossary, SecurityAuditLog, News],
           synchronize: false, // Dùng schema SQL có sẵn
           logging: false,
           ssl: useSsl
@@ -59,10 +63,12 @@ import { AppController } from './app.controller';
       rootPath: path.join(process.cwd(), 'dist'),
       exclude: ['/api/(.*)', '/health/(.*)'],
     }),
+    StorageModule,
     AuthModule,
     CharacterModule,
     GlossaryModule,
     SecurityModule,
+    NewsModule,
   ],
   controllers: [AppController],
 })

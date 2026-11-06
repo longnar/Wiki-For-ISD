@@ -27,5 +27,6 @@
     "allowJs": true,
     "esModuleInterop": true
   },
-  "include": ["src", "server/src/**/*"]
+  "include": ["src", "server/src/**/*"],
+  "exclude": ["node_modules", "dist", "dist-server", "**/*.spec.ts", "**/*.test.ts"]
 }

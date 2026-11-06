@@ -64,6 +64,17 @@ const multerOptions = {
             cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
         },
     }),
+    limits: {
+        fileSize: 25 * 1024 * 1024,
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        }
+        else {
+            cb(new Error('Chỉ chấp nhận tệp định dạng hình ảnh (.png, .jpg, .webp, .svg, .gif).'), false);
+        }
+    },
 };
 let GlossaryController = class GlossaryController {
     constructor(glossaryService) {

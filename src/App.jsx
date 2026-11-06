@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import heroArtImage from './assets/characters/IdolShowdownNextFesBiboo_1.png'
 import contactCharacterImage from './assets/characters/fbk-eating.gif'
 import gameLogo from './assets/branding/IdolShowdownNF_logo.png'
@@ -8,19 +8,27 @@ import pixelKoyori from './assets/characters/Pixel Koyori.png'
 import selectionFrame from './assets/decorative/selection-frame.svg'
 import selectionPolygon from './assets/decorative/selection-polygon.svg'
 import { decodeBase64Image } from './utils/decodeImage'
-import { api } from './api/client'
-import GlossaryScreen from './components/glossary/GlossaryScreen'
+import { api, getValidToken } from './api/client'
+import GlossaryBasicScreen from './components/glossary/GlossaryBasicScreen'
+import GlossaryAdvancedScreen from './components/glossary/GlossaryAdvancedScreen'
 import CharacterSelectGrid from './components/character/CharacterSelectGrid'
-import CharacterDetailModal from './components/character/CharacterDetailModal'
 import NewsScreen from './components/news/NewsScreen'
+import Footer from './components/Footer'
+import HeaderSearchBar from './components/HeaderSearchBar'
+import SiteHeader from './components/SiteHeader'
+import { INITIAL_GLOSSARY_TERMS } from './data/glossaryData'
+import { INITIAL_NEWS_PATCHES } from './data/newsData'
 import './components/character/CharacterStyles.css'
 import './App.css'
 
 function App() {
   const [activePage, setActivePage] = useState('home')
   const [isLoginOpen, setIsLoginOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(window.localStorage.getItem('idol-showdown-token')))
+  // Chỉ coi là đã đăng nhập khi token còn hạn (token hết hạn bị xóa ngay khi tải trang)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getValidToken()))
   const [loginError, setLoginError] = useState('')
+  // true khi modal login được mở do phiên hết hạn (đăng nhập lại), false khi bấm nút Login
+  const isReloginRef = useRef(false)
   const [activeCard, setActiveCard] = useState(0)
   const [isCardSliding, setIsCardSliding] = useState(false)
   const [isCardResetting, setIsCardResetting] = useState(false)
@@ -33,18 +41,13 @@ function App() {
   const [characterCards, setCharacterCards] = useState([])
   const [cardUrls, setCardUrls] = useState({})
   const cardUrlsRef = useRef({})
-  const [glossaries, setGlossaries] = useState([])
-  const [dataError, setDataError] = useState('')
-  const [isDataLoading, setIsDataLoading] = useState(false)
-  const [glossaryForm, setGlossaryForm] = useState({
-    id: null, term: '', definition: '', level: 'basic', video_url: '', image: null
-  })
   const [characterForm, setCharacterForm] = useState({
     name: '', debut_date: '', description: '', difficulty: 1, type: '', image: null
   })
   const [dbCharacters, setDbCharacters] = useState([])
   const [selectedCharacter, setSelectedCharacter] = useState(null)
-  const [isCharDetailOpen, setIsCharDetailOpen] = useState(false)
+  const [searchGlossaries, setSearchGlossaries] = useState(INITIAL_GLOSSARY_TERMS)
+  const [searchNews, setSearchNews] = useState(INITIAL_NEWS_PATCHES)
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -171,7 +174,9 @@ function App() {
       window.localStorage.setItem('idol-showdown-token', payload.token)
       setIsLoginOpen(false)
       setIsAuthenticated(true)
-      setActivePage('selection')
+      // Đăng nhập lại sau khi hết phiên thì ở nguyên trang đang xem, không đá về trang chọn nhân vật
+      if (!isReloginRef.current) setActivePage('selection')
+      isReloginRef.current = false
     } catch (error) {
       console.error('Unable to log in.', error)
       setLoginError(error.message || 'Không thể kết nối tới máy chủ.')
@@ -321,6 +326,7 @@ function App() {
 
   useEffect(() => {
     const handleAuthExpired = () => {
+      isReloginRef.current = true
       setIsAuthenticated(false)
       setIsLoginOpen(true)
       setLoginError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
@@ -329,20 +335,85 @@ function App() {
     return () => window.removeEventListener('auth-expired', handleAuthExpired)
   }, [])
 
+  // Xác thực token với server khi tải trang (token ký bằng secret khác, user bị xóa...).
+  // Lỗi ở bước này chỉ đăng xuất im lặng, không bật modal làm phiền khách.
+  useEffect(() => {
+    const token = getValidToken()
+    if (!token) return
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => {
+        if (response.status === 401 || response.status === 403) {
+          window.localStorage.removeItem('idol-showdown-token')
+          setIsAuthenticated(false)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Tự đăng xuất khi token hết hạn lúc đang mở trang.
+  // Không dùng một setTimeout dài vì timer bị treo khi máy sleep / bị trình duyệt hãm ở tab nền:
+  // kiểm tra định kỳ mỗi 30 giây và kiểm tra ngay khi người dùng quay lại tab.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const checkExpiry = () => {
+      if (getValidToken()) return
+      window.dispatchEvent(new CustomEvent('auth-expired'))
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkExpiry()
+    }
+    checkExpiry()
+    const interval = window.setInterval(checkExpiry, 30 * 1000)
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', checkExpiry)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', checkExpiry)
+    }
+  }, [isAuthenticated])
+
+  // Đồng bộ trạng thái đăng nhập giữa các tab (đăng xuất/đăng nhập ở tab khác)
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key !== 'idol-showdown-token' && event.key !== null) return
+      setIsAuthenticated(Boolean(getValidToken()))
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
   const loadCharacters = async () => {
-    setIsDataLoading(true)
     try {
       const list = await api.getCharacters()
-      setDbCharacters(list)
-      if (list.length > 0) {
+      if (Array.isArray(list) && list.length > 0) {
+        setDbCharacters(list)
         setSelectedCharacter((prev) => prev ? list.find(c => c.id === prev.id) || list[0] : list[0])
       }
     } catch (error) {
       console.error('Unable to load characters.', error)
-    } finally {
-      setIsDataLoading(false)
     }
   }
+
+  // Tải dữ liệu tổng hợp cho thanh Quick Search khi khởi động
+  useEffect(() => {
+    loadCharacters()
+    api.getGlossaries()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSearchGlossaries(data)
+        }
+      })
+      .catch((err) => console.warn('Using fallback glossaries for search.', err))
+
+    api.getNews()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSearchNews(data)
+        }
+      })
+      .catch((err) => console.warn('Using fallback news for search.', err))
+  }, [])
 
   useEffect(() => {
     if (activePage === 'selection' || activePage === 'selection-add') {
@@ -350,43 +421,37 @@ function App() {
     }
   }, [activePage])
 
-  const loadGlossaries = async () => {
-    setIsDataLoading(true)
-    setDataError('')
-    try {
-      setGlossaries(await api.getGlossaries())
-    } catch (error) {
-      console.error('Unable to load glossaries.', error)
-      setDataError(error.message)
-    } finally {
-      setIsDataLoading(false)
-    }
-  }
 
-  useEffect(() => {
-    if (activePage === 'glossary' || activePage.startsWith('glossary-')) {
-      loadGlossaries()
-    }
-  }, [activePage])
+  const renderSharedHeader = () => (
+    <SiteHeader
+      onNavigateHome={() => setActivePage('home')}
+      onNavigateNews={() => setActivePage('news')}
+      onNavigateContacts={() => setActivePage('contacts')}
+      dbCharacters={dbCharacters}
+      searchGlossaries={searchGlossaries}
+      searchNews={searchNews}
+      onSelectCharacter={(char) => {
+        setSelectedCharacter(char)
+        setActivePage('selection')
+      }}
+      onSelectGlossary={(item) => {
+        setActivePage(item.level === 'advanced' ? 'glossary-advanced' : 'glossary-basic')
+      }}
+      onSelectNews={() => {
+        setActivePage('news')
+      }}
+      isAuthenticated={isAuthenticated}
+      onLogin={() => {
+        isReloginRef.current = false
+        setIsLoginOpen(true)
+      }}
+      onLogout={handleLogout}
+    />
+  )
 
   const renderHome = () => (
     <>
-      <header className="site-header">
-        <nav className="main-nav" aria-label="Điều hướng chính">
-          <button type="button" className="nav-link" onClick={() => setActivePage('home')}>
-            Replay
-          </button>
-          <button type="button" className="nav-link" onClick={() => setActivePage('news')}>
-            News
-          </button>
-          <button type="button" className="nav-link" onClick={() => setActivePage('contacts')}>
-            Contacts
-          </button>
-          <button type="button" className="login-trigger" onClick={isAuthenticated ? handleLogout : () => setIsLoginOpen(true)}>
-            {isAuthenticated ? 'Logout' : 'Login'}
-          </button>
-        </nav>
-      </header>
+      {renderSharedHeader()}
 
       <main>
         <section className="hero" id="hero">
@@ -469,7 +534,7 @@ function App() {
         </section>
       </main>
 
-      <footer id="footer" />
+      <Footer onNavigate={(page) => setActivePage(page)} />
     </>
   )
 
@@ -534,28 +599,40 @@ function App() {
           <p>Những thứ nâng cao hơn nếu bạn muốn cải thiện trình độ hoặc muốn hiểu sâu hơn về Fighting game</p>
         </div>
       </button>
-      {dataError && <p className="data-error" role="alert">{dataError}</p>}
     </main>
   )
 
-  const renderGlossarySection = (level) => (
-    <GlossaryScreen
-      initialLevel={level}
-      isAuthenticated={isAuthenticated}
-      onBackHome={() => setActivePage('glossary')}
-    />
+  // GlossaryStyles.css đã chừa sẵn padding-top 84px cho SiteHeader (fixed, cao 64px)
+  const renderGlossaryBasic = () => (
+    <>
+      {renderSharedHeader()}
+      <GlossaryBasicScreen
+        isAuthenticated={isAuthenticated}
+        onBackHome={() => setActivePage('glossary')}
+        onNavigateToAdvanced={() => setActivePage('glossary-advanced')}
+      />
+    </>
+  )
+
+  const renderGlossaryAdvanced = () => (
+    <>
+      {renderSharedHeader()}
+      <GlossaryAdvancedScreen
+        isAuthenticated={isAuthenticated}
+        onBackHome={() => setActivePage('glossary')}
+        onNavigateToBasic={() => setActivePage('glossary-basic')}
+      />
+    </>
   )
 
   const renderSelection = () => (
-    <CharacterSelectGrid
+    <>
+      {renderSharedHeader()}
+      <CharacterSelectGrid
       characters={dbCharacters}
       selectedCharacter={selectedCharacter || dbCharacters[0]}
       onSelectCharacter={(char) => setSelectedCharacter(char)}
       onCharacterUpdated={loadCharacters}
-      onOpenDetails={(char) => {
-        setSelectedCharacter(char)
-        setIsCharDetailOpen(true)
-      }}
       onAddNewCharacter={() => {
         setCharacterForm({ name: '', debut_date: '', description: '', difficulty: 1, type: '', image: null })
         setMainCharacterImagePreview('')
@@ -564,6 +641,7 @@ function App() {
       isAuthenticated={isAuthenticated}
       onBackHome={() => setActivePage('home')}
     />
+    </>
   )
 
   const renderNews = () => (
@@ -667,10 +745,10 @@ function App() {
         return renderGlossary()
       case 'glossary-basic':
       case 'glossary-basic-view':
-        return renderGlossarySection('basic')
+        return renderGlossaryBasic()
       case 'glossary-advanced':
       case 'glossary-advanced-view':
-        return renderGlossarySection('advanced')
+        return renderGlossaryAdvanced()
       case 'selection-add':
         return isAuthenticated ? renderSelectionAdd() : renderSelection()
       case 'selection':
@@ -685,14 +763,6 @@ function App() {
   return (
     <div className="page-shell">
       {renderPage()}
-
-      <CharacterDetailModal
-        character={selectedCharacter}
-        isOpen={isCharDetailOpen}
-        onClose={() => setIsCharDetailOpen(false)}
-        isAuthenticated={isAuthenticated}
-        onUpdated={() => loadCharacters()}
-      />
 
       <div className={`login-modal ${isLoginOpen ? '' : 'hidden'}`} role="dialog" aria-modal="true" aria-labelledby="login-title">
         <div className="login-modal-backdrop" onClick={() => setIsLoginOpen(false)} aria-hidden="true" />
@@ -717,3 +787,4 @@ function App() {
 }
 
 export default App
+

@@ -17,6 +17,16 @@ const multerOptions = {
       cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
     },
   }),
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB (hỗ trợ GIF hoạt họa và PNG)
+  },
+  fileFilter: (req: any, file: any, cb: any) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận tệp định dạng hình ảnh (.png, .jpg, .webp, .svg, .gif).'), false);
+    }
+  },
 };
 
 @ApiTags('Glossaries')

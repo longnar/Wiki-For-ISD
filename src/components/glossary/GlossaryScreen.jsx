@@ -4,11 +4,14 @@ import { INITIAL_GLOSSARY_TERMS } from '../../data/glossaryData';
 import './GlossaryStyles.css';
 
 export default function GlossaryScreen({
-  initialLevel = 'basic',
+  level = 'basic', // 'basic' | 'advanced'
   isAuthenticated = false,
   onBackHome,
+  onSwitchPage,
 }) {
-  const [activeLevel, setActiveLevel] = useState(initialLevel);
+  const isAdvanced = level === 'advanced';
+  const pageTitle = isAdvanced ? 'Advanced Glossary' : 'Basic Glossary';
+
   const [glossaries, setGlossaries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTermId, setActiveTermId] = useState(null);
@@ -21,7 +24,7 @@ export default function GlossaryScreen({
     id: null,
     term: '',
     definition: '',
-    level: initialLevel,
+    level: level,
     video_url: '',
     image: null,
     image_preview: '',
@@ -48,16 +51,23 @@ export default function GlossaryScreen({
     fetchGlossaries();
   }, []);
 
-  // Cập nhật level khi prop initialLevel thay đổi
+  // Reset form & active khi chuyển level
   useEffect(() => {
-    setActiveLevel(initialLevel);
     setIsEditing(false);
     setIsCreating(false);
-  }, [initialLevel]);
+    setActiveTermId(null);
+  }, [level]);
 
-  // Lọc danh sách thuật ngữ theo level hiện tại và từ khóa tìm kiếm
+  // Lọc danh sách thuật ngữ theo trang hiện tại và từ khóa tìm kiếm
   const filteredTerms = useMemo(() => {
-    const list = glossaries.filter((g) => (g.level || 'basic') === activeLevel);
+    const list = glossaries.filter((g) => {
+      const itemLevel = (g.level || 'basic').toLowerCase();
+      if (isAdvanced) {
+        return itemLevel === 'advanced' || itemLevel === 'advance';
+      }
+      return itemLevel === 'basic';
+    });
+
     if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase().trim();
     return list.filter(
@@ -65,7 +75,7 @@ export default function GlossaryScreen({
         (g.term && g.term.toLowerCase().includes(q)) ||
         (g.definition && g.definition.toLowerCase().includes(q))
     );
-  }, [glossaries, activeLevel, searchQuery]);
+  }, [glossaries, isAdvanced, searchQuery]);
 
   // Thuật ngữ đang được chọn
   const activeTerm = useMemo(() => {
@@ -90,7 +100,7 @@ export default function GlossaryScreen({
       id: activeTerm.id,
       term: activeTerm.term || '',
       definition: activeTerm.definition || '',
-      level: activeTerm.level || activeLevel,
+      level: activeTerm.level || level,
       video_url: activeTerm.video_url || '',
       image: null,
       image_preview: activeTerm.image_url || '',
@@ -105,7 +115,7 @@ export default function GlossaryScreen({
       id: null,
       term: '',
       definition: '',
-      level: activeLevel,
+      level: level, // Khóa cố định theo trang hiện tại
       video_url: '',
       image: null,
       image_preview: '',
@@ -114,79 +124,49 @@ export default function GlossaryScreen({
     setIsEditing(false);
   };
 
+  // Lưu thuật ngữ (Tạo mới hoặc Cập nhật)
+  const handleSubmitForm = async (e) => {
+    e.preventDefault();
+    if (!formData.term.trim() || !formData.definition.trim()) {
+      alert('Vui lòng điền đầy đủ Thuật ngữ và Định nghĩa!');
+      return;
+    }
+
+    try {
+      const form = new FormData();
+      form.append('term', formData.term);
+      form.append('definition', formData.definition);
+      form.append('level', level); // Luôn lưu đúng level của trang hiện tại
+      // Luôn gửi video_url (kể cả rỗng) để server xóa được video cũ khi admin xóa trống ô này
+      form.append('video_url', formData.video_url.trim());
+      if (formData.image) form.append('image', formData.image);
+
+      if (isCreating) {
+        await api.createGlossary(form);
+      } else if (isEditing && formData.id) {
+        await api.updateGlossary(formData.id, form);
+      }
+
+      await fetchGlossaries();
+      setIsEditing(false);
+      setIsCreating(false);
+    } catch (err) {
+      alert('Lỗi khi lưu thuật ngữ: ' + (err.message || 'Vui lòng thử lại'));
+    }
+  };
+
   // Xóa thuật ngữ (Admin)
   const handleDeleteTerm = async () => {
     if (!activeTerm) return;
-    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa thuật ngữ "${activeTerm.term}"?`);
-    if (!confirmDelete) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa thuật ngữ "${activeTerm.term}"?`)) return;
 
     try {
       await api.deleteGlossary(activeTerm.id);
-    } catch {
-      // Fallback local state nếu DB offline
-      setGlossaries((prev) => prev.filter((item) => item.id !== activeTerm.id));
-    }
-    await fetchGlossaries();
-    setIsEditing(false);
-    setIsCreating(false);
-  };
-
-  // Xử lý lưu form (Thêm mới hoặc Cập nhật)
-  const handleSaveForm = async (e) => {
-    e.preventDefault();
-
-    if (!formData.term.trim()) {
-      alert('Vui lòng nhập tên thuật ngữ.');
-      return;
-    }
-    if (!formData.definition.trim()) {
-      alert('Vui lòng nhập định nghĩa thuật ngữ.');
-      return;
-    }
-
-    const payload = new FormData();
-    payload.append('term', formData.term.trim());
-    payload.append('definition', formData.definition.trim());
-    payload.append('level', formData.level || activeLevel);
-    if (formData.video_url.trim()) {
-      payload.append('video_url', formData.video_url.trim());
-    }
-    if (formData.image) {
-      payload.append('image', formData.image);
-    }
-
-    try {
-      if (isCreating) {
-        const res = await api.createGlossary(payload);
-        await fetchGlossaries();
-        if (res?.glossary?.id) setActiveTermId(res.glossary.id);
-      } else if (isEditing && activeTerm) {
-        await api.updateGlossary(activeTerm.id, payload);
-        await fetchGlossaries();
-      }
+      await fetchGlossaries();
+      setActiveTermId(null);
     } catch (err) {
-      // Fallback local update
-      const localObj = {
-        id: isCreating ? Date.now() : activeTerm.id,
-        term: formData.term.trim(),
-        definition: formData.definition.trim(),
-        level: formData.level || activeLevel,
-        video_url: formData.video_url.trim(),
-        image_url: formData.image_preview || '',
-        created_at: new Date().toISOString().substring(0, 10),
-      };
-
-      if (isCreating) {
-        setGlossaries([localObj, ...glossaries]);
-        setActiveTermId(localObj.id);
-      } else {
-        setGlossaries(glossaries.map((g) => (g.id === activeTerm.id ? { ...g, ...localObj } : g)));
-      }
-      console.warn('Lưu cục bộ do kết nối backend:', err.message);
+      alert('Lỗi khi xóa thuật ngữ: ' + (err.message || 'Vui lòng thử lại'));
     }
-
-    setIsEditing(false);
-    setIsCreating(false);
   };
 
   const handleCancelForm = () => {
@@ -195,7 +175,7 @@ export default function GlossaryScreen({
   };
 
   return (
-    <main className="figma-glossary-screen" aria-label="Màn hình tra cứu Glossary">
+    <main className="figma-glossary-screen" aria-label={`Màn hình ${pageTitle}`}>
       {/* Nút Back quay lại trang danh mục Glossary */}
       <button
         type="button"
@@ -203,8 +183,8 @@ export default function GlossaryScreen({
         onClick={() => {
           if (onBackHome) onBackHome();
         }}
-        aria-label="Quay lại"
-        title="Quay lại mục Glossary"
+        aria-label="Quay lại danh mục Glossary"
+        title="Quay lại danh mục Glossary"
       >
         <span aria-hidden="true">&larr;</span>
         <span>Back</span>
@@ -213,113 +193,101 @@ export default function GlossaryScreen({
       {/* Khung tổng thể kính mờ */}
       <section className="figma-glossary-container">
         {/* CỘT TRÁI: DANH SÁCH THUẬT NGỮ */}
-        <aside className="figma-glossary-sidebar" aria-label="Danh sách các thuật ngữ">
+        <aside className="figma-glossary-sidebar" aria-label={`Danh sách ${pageTitle}`}>
           <div className="figma-glossary-sidebar-header">
             <h2 className="figma-glossary-sidebar-title">
-              <span>{activeLevel === 'basic' ? 'Basic Glossary' : 'Advanced Glossary'}</span>
+              <span>{pageTitle}</span>
             </h2>
 
-            {/* Nút thêm mới danh cho Admin */}
+            {/* Nút thêm mới dành cho Admin */}
             {isAuthenticated && (
               <button
                 type="button"
                 className="figma-glossary-add-btn"
                 onClick={handleStartCreate}
-                title="Thêm thuật ngữ mới"
+                title={`Thêm thuật ngữ ${isAdvanced ? 'nâng cao' : 'cơ bản'} mới`}
               >
                 + Thêm
               </button>
             )}
           </div>
 
-          {/* Bộ chuyển tab nhanh giữa Basic và Advanced */}
-          <div className="figma-glossary-level-tabs" role="tablist">
+          {/* Nút chuyển đổi nhanh giữa 2 trang Basic và Advanced */}
+          {onSwitchPage && (
             <button
               type="button"
-              role="tab"
-              aria-selected={activeLevel === 'basic'}
-              className={`figma-glossary-tab-btn ${activeLevel === 'basic' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveLevel('basic');
-                setIsEditing(false);
-                setIsCreating(false);
-              }}
+              className="figma-glossary-switch-page-btn"
+              onClick={onSwitchPage}
+              title={`Chuyển sang trang ${isAdvanced ? 'Cơ bản (Basic)' : 'Nâng cao (Advanced)'}`}
             >
-              Cơ Bản (Basic)
+              <span>{isAdvanced ? '⬅ Sang trang Cơ Bản (Basic)' : 'Sang trang Nâng Cao (Advanced) ➡'}</span>
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeLevel === 'advanced'}
-              className={`figma-glossary-tab-btn ${activeLevel === 'advanced' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveLevel('advanced');
-                setIsEditing(false);
-                setIsCreating(false);
-              }}
-            >
-              Nâng Cao (Advanced)
-            </button>
-          </div>
+          )}
 
           {/* Thanh tìm kiếm trực tiếp */}
           <div className="figma-glossary-search-wrap">
             <input
               type="text"
               className="figma-glossary-search-input"
+              placeholder={`Tìm kiếm trong ${pageTitle}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm thuật ngữ..."
               aria-label="Tìm kiếm thuật ngữ"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className="figma-glossary-search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Xóa tìm kiếm"
+              >
+                &times;
+              </button>
+            )}
           </div>
 
-          {/* Danh sách cuộn thuật ngữ */}
-          <div className="figma-glossary-list" role="tablist">
-            {isLoading && glossaries.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
-                Đang tải dữ liệu...
+          {/* Danh sách cuộn các thuật ngữ */}
+          <div className="figma-glossary-list" role="list">
+            {isLoading ? (
+              <div className="figma-glossary-empty">Đang tải thuật ngữ...</div>
+            ) : filteredTerms.length === 0 ? (
+              <div className="figma-glossary-empty">
+                {searchQuery ? 'Không tìm thấy thuật ngữ phù hợp' : 'Chưa có thuật ngữ nào ở mục này'}
               </div>
             ) : (
-              filteredTerms.map((item) => {
-                const isActive = activeTerm?.id === item.id;
+              filteredTerms.map((term) => {
+                const isSelected = activeTerm?.id === term.id;
                 return (
                   <button
+                    key={term.id}
                     type="button"
-                    key={item.id}
-                    role="tab"
-                    aria-selected={isActive}
-                    className={`figma-glossary-item ${isActive ? 'active' : ''}`}
-                    onClick={() => handleSelectTerm(item)}
+                    role="listitem"
+                    className={`figma-glossary-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => handleSelectTerm(term)}
                   >
-                    <div className="figma-glossary-item-title">
-                      <span>{item.term}</span>
+                    <div className="figma-glossary-card-header">
+                      <span className="figma-glossary-card-title">{term.term}</span>
                     </div>
-                    {item.definition && (
-                      <div className="figma-glossary-item-preview">{item.definition}</div>
-                    )}
                   </button>
                 );
               })
             )}
-
-            {!isLoading && filteredTerms.length === 0 && (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
-                Không tìm thấy thuật ngữ nào.
-              </div>
-            )}
           </div>
         </aside>
 
-        {/* CỘT PHẢI: CHI TIẾT THUẬT NGỮ HOẶC FORM SOẠN THẢO */}
-        <article className="figma-glossary-content-panel">
+        {/* CỘT PHẢI: CHI TIẾT THUẬT NGỮ HOẶC FORM CRUD */}
+        <section className="figma-glossary-content-panel" aria-label="Chi tiết thuật ngữ">
           {isEditing || isCreating ? (
-            /* Chế độ soạn thảo Admin */
-            <form className="figma-glossary-form" onSubmit={handleSaveForm}>
+            /* Form thêm / sửa thuật ngữ cho Admin */
+            <form className="figma-glossary-form" onSubmit={handleSubmitForm}>
+              <h2 className="figma-glossary-form-title">
+                {isCreating ? `Thêm thuật ngữ ${pageTitle}` : `Chỉnh sửa: ${formData.term}`}
+              </h2>
+
               <div className="figma-glossary-form-grid">
                 <div className="figma-glossary-field">
                   <label className="figma-glossary-label" htmlFor="glossary-term-input">
-                    Tên thuật ngữ
+                    Tên thuật ngữ (*)
                   </label>
                   <input
                     id="glossary-term-input"
@@ -327,24 +295,24 @@ export default function GlossaryScreen({
                     className="figma-glossary-input"
                     value={formData.term}
                     onChange={(e) => setFormData({ ...formData, term: e.target.value })}
-                    placeholder="VD: Okizeme, Startup, Meaty..."
+                    placeholder="VD: Startup, Blockstun, Okizeme..."
                     required
                   />
                 </div>
 
                 <div className="figma-glossary-field">
-                  <label className="figma-glossary-label" htmlFor="glossary-level-select">
-                    Cấp độ (Level)
+                  <label className="figma-glossary-label" htmlFor="glossary-level-fixed">
+                    Phân loại trang
                   </label>
-                  <select
-                    id="glossary-level-select"
-                    className="figma-glossary-select"
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                  >
-                    <option value="basic">Cơ bản (Basic)</option>
-                    <option value="advanced">Nâng cao (Advanced)</option>
-                  </select>
+                  <input
+                    id="glossary-level-fixed"
+                    type="text"
+                    className="figma-glossary-input"
+                    value={isAdvanced ? 'Nâng cao (Advanced Glossary)' : 'Cơ bản (Basic Glossary)'}
+                    disabled
+                    readOnly
+                    style={{ opacity: 0.85, cursor: 'not-allowed' }}
+                  />
                 </div>
               </div>
 
@@ -388,7 +356,7 @@ export default function GlossaryScreen({
 
               <div className="figma-glossary-field" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <label className="figma-glossary-label" htmlFor="glossary-def-textarea">
-                  Định nghĩa &amp; Hướng dẫn chi tiết
+                  Định nghĩa &amp; Hướng dẫn chi tiết (*)
                 </label>
                 <textarea
                   id="glossary-def-textarea"
@@ -417,14 +385,6 @@ export default function GlossaryScreen({
                 <header className="figma-glossary-article-header">
                   <div className="figma-glossary-article-title-wrap">
                     <h1 className="figma-glossary-article-title">{activeTerm.term}</h1>
-                    <div className="figma-glossary-article-meta">
-                      <span className={`figma-glossary-badge ${activeTerm.level || 'basic'}`}>
-                        {activeTerm.level === 'advanced' ? 'Nâng cao' : 'Cơ bản'}
-                      </span>
-                      {activeTerm.created_at && (
-                        <span>Ngày cập nhật: {String(activeTerm.created_at).substring(0, 10)}</span>
-                      )}
-                    </div>
                   </div>
 
                   {/* Thanh công cụ Admin */}
@@ -471,11 +431,12 @@ export default function GlossaryScreen({
                   {/* Hình ảnh minh họa */}
                   {activeTerm.image_url && (
                     <div className="figma-glossary-media-box">
-                      <h3 className="figma-glossary-media-title">Ảnh minh họa:</h3>
+                      <h3 className="figma-glossary-media-title">Hình ảnh minh họa:</h3>
                       <img
                         src={activeTerm.image_url}
-                        alt={`Minh họa ${activeTerm.term}`}
-                        className="figma-glossary-media-img"
+                        alt={activeTerm.term}
+                        className="figma-glossary-img-preview"
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -483,7 +444,7 @@ export default function GlossaryScreen({
               </>
             )
           )}
-        </article>
+        </section>
       </section>
     </main>
   );

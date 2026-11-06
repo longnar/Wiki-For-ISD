@@ -9,6 +9,7 @@ import { CharacterBaseStat } from '../../entities/character-base-stat.entity';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { CreateMoveDto } from './dto/create-move.dto';
 import { UpsertBaseStatsDto } from './dto/create-move.dto';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class CharacterService {
@@ -19,15 +20,12 @@ export class CharacterService {
     private moveRepo: Repository<CharacterMove>,
     @InjectRepository(CharacterBaseStat)
     private baseStatRepo: Repository<CharacterBaseStat>,
+    private storageService: StorageService,
   ) {}
 
-  private deleteUploadedFile(relativeUrl: string | null) {
+  private async deleteUploadedFile(relativeUrl: string | null) {
     if (!relativeUrl) return;
-    const filename = relativeUrl.replace(/^\/uploads\//, '');
-    const filepath = path.join(process.cwd(), 'uploads', filename);
-    fs.unlink(filepath, (err) => {
-      if (err) console.warn(`[Warning] Could not delete file: ${filepath}`, err.message);
-    });
+    await this.storageService.deleteFile(relativeUrl);
   }
 
   async getAllCharacters(): Promise<Character[]> {
@@ -44,7 +42,7 @@ export class CharacterService {
   }
 
   async createCharacter(dto: CreateCharacterDto, file?: Express.Multer.File) {
-    const imageUrl = file ? `/uploads/${file.filename}` : null;
+    const imageUrl = file ? await this.storageService.uploadFile(file, 'characters') : null;
     try {
       const newCharacter = this.characterRepo.create({
         name: dto.name,
@@ -57,7 +55,7 @@ export class CharacterService {
       const saved = await this.characterRepo.save(newCharacter);
       return { message: 'Character created successfully.', character: saved };
     } catch (error) {
-      if (file) this.deleteUploadedFile(imageUrl);
+      if (file) await this.deleteUploadedFile(imageUrl);
       throw error;
     }
   }
@@ -65,14 +63,13 @@ export class CharacterService {
   async updateCharacter(id: number, dto: Partial<CreateCharacterDto>, file?: Express.Multer.File) {
     const character = await this.characterRepo.findOne({ where: { id } });
     if (!character) {
-      if (file) this.deleteUploadedFile(`/uploads/${file.filename}`);
       throw new NotFoundException('Character not found.');
     }
 
     let imageUrl = character.image_url;
     if (file) {
-      if (character.image_url) this.deleteUploadedFile(character.image_url);
-      imageUrl = `/uploads/${file.filename}`;
+      if (character.image_url) await this.deleteUploadedFile(character.image_url);
+      imageUrl = await this.storageService.uploadFile(file, 'characters');
     }
 
     character.name = dto.name !== undefined ? dto.name : character.name;
@@ -91,7 +88,7 @@ export class CharacterService {
     if (!character) throw new NotFoundException('Character not found.');
 
     await this.characterRepo.remove(character);
-    if (character.image_url) this.deleteUploadedFile(character.image_url);
+    if (character.image_url) await this.deleteUploadedFile(character.image_url);
 
     return { message: 'Character deleted successfully.' };
   }
@@ -108,7 +105,7 @@ export class CharacterService {
 
   async createCharacterMove(characterId: number, dto: CreateMoveDto, file?: Express.Multer.File) {
     await this.getCharacterById(characterId);
-    const hitboxUrl = file ? `/uploads/${file.filename}` : (dto.hitbox_url || null);
+    const hitboxUrl = file ? await this.storageService.uploadFile(file, 'hitboxes') : (dto.hitbox_url || null);
     const newMove = this.moveRepo.create({
       character_id: characterId,
       ...dto,
@@ -123,10 +120,10 @@ export class CharacterService {
     if (!move) throw new NotFoundException('Character move not found.');
 
     if (file) {
-      if (move.hitbox_url && move.hitbox_url.startsWith('/uploads/')) {
-        this.deleteUploadedFile(move.hitbox_url);
+      if (move.hitbox_url) {
+        await this.deleteUploadedFile(move.hitbox_url);
       }
-      dto.hitbox_url = `/uploads/${file.filename}`;
+      dto.hitbox_url = await this.storageService.uploadFile(file, 'hitboxes');
     }
 
     Object.assign(move, dto);
@@ -144,8 +141,8 @@ export class CharacterService {
         return { message: 'Character move not found or already deleted.' };
       }
 
-      if (move.hitbox_url && move.hitbox_url.startsWith('/uploads/')) {
-        this.deleteUploadedFile(move.hitbox_url);
+      if (move.hitbox_url) {
+        await this.deleteUploadedFile(move.hitbox_url);
       }
 
       await this.moveRepo.delete({ id: move.id });

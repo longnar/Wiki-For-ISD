@@ -1,43 +1,10 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -49,26 +16,21 @@ exports.CharacterService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const fs = __importStar(require("fs"));
-const path = __importStar(require("path"));
 const character_entity_1 = require("../../entities/character.entity");
 const character_move_entity_1 = require("../../entities/character-move.entity");
 const character_base_stat_entity_1 = require("../../entities/character-base-stat.entity");
+const storage_service_1 = require("../storage/storage.service");
 let CharacterService = class CharacterService {
-    constructor(characterRepo, moveRepo, baseStatRepo) {
+    constructor(characterRepo, moveRepo, baseStatRepo, storageService) {
         this.characterRepo = characterRepo;
         this.moveRepo = moveRepo;
         this.baseStatRepo = baseStatRepo;
+        this.storageService = storageService;
     }
-    deleteUploadedFile(relativeUrl) {
+    async deleteUploadedFile(relativeUrl) {
         if (!relativeUrl)
             return;
-        const filename = relativeUrl.replace(/^\/uploads\//, '');
-        const filepath = path.join(process.cwd(), 'uploads', filename);
-        fs.unlink(filepath, (err) => {
-            if (err)
-                console.warn(`[Warning] Could not delete file: ${filepath}`, err.message);
-        });
+        await this.storageService.deleteFile(relativeUrl);
     }
     async getAllCharacters() {
         return this.characterRepo.find({ order: { name: 'ASC' } });
@@ -83,7 +45,7 @@ let CharacterService = class CharacterService {
         return character;
     }
     async createCharacter(dto, file) {
-        const imageUrl = file ? `/uploads/${file.filename}` : null;
+        const imageUrl = file ? await this.storageService.uploadFile(file, 'characters') : null;
         try {
             const newCharacter = this.characterRepo.create({
                 name: dto.name,
@@ -98,22 +60,20 @@ let CharacterService = class CharacterService {
         }
         catch (error) {
             if (file)
-                this.deleteUploadedFile(imageUrl);
+                await this.deleteUploadedFile(imageUrl);
             throw error;
         }
     }
     async updateCharacter(id, dto, file) {
         const character = await this.characterRepo.findOne({ where: { id } });
         if (!character) {
-            if (file)
-                this.deleteUploadedFile(`/uploads/${file.filename}`);
             throw new common_1.NotFoundException('Character not found.');
         }
         let imageUrl = character.image_url;
         if (file) {
             if (character.image_url)
-                this.deleteUploadedFile(character.image_url);
-            imageUrl = `/uploads/${file.filename}`;
+                await this.deleteUploadedFile(character.image_url);
+            imageUrl = await this.storageService.uploadFile(file, 'characters');
         }
         character.name = dto.name !== undefined ? dto.name : character.name;
         character.debut_date = dto.debut_date !== undefined ? (dto.debut_date || null) : character.debut_date;
@@ -130,7 +90,7 @@ let CharacterService = class CharacterService {
             throw new common_1.NotFoundException('Character not found.');
         await this.characterRepo.remove(character);
         if (character.image_url)
-            this.deleteUploadedFile(character.image_url);
+            await this.deleteUploadedFile(character.image_url);
         return { message: 'Character deleted successfully.' };
     }
     async getCharacterMoves(characterId) {
@@ -143,7 +103,7 @@ let CharacterService = class CharacterService {
     }
     async createCharacterMove(characterId, dto, file) {
         await this.getCharacterById(characterId);
-        const hitboxUrl = file ? `/uploads/${file.filename}` : (dto.hitbox_url || null);
+        const hitboxUrl = file ? await this.storageService.uploadFile(file, 'hitboxes') : (dto.hitbox_url || null);
         const newMove = this.moveRepo.create({
             character_id: characterId,
             ...dto,
@@ -157,10 +117,10 @@ let CharacterService = class CharacterService {
         if (!move)
             throw new common_1.NotFoundException('Character move not found.');
         if (file) {
-            if (move.hitbox_url && move.hitbox_url.startsWith('/uploads/')) {
-                this.deleteUploadedFile(move.hitbox_url);
+            if (move.hitbox_url) {
+                await this.deleteUploadedFile(move.hitbox_url);
             }
-            dto.hitbox_url = `/uploads/${file.filename}`;
+            dto.hitbox_url = await this.storageService.uploadFile(file, 'hitboxes');
         }
         Object.assign(move, dto);
         const saved = await this.moveRepo.save(move);
@@ -175,8 +135,8 @@ let CharacterService = class CharacterService {
             if (!move) {
                 return { message: 'Character move not found or already deleted.' };
             }
-            if (move.hitbox_url && move.hitbox_url.startsWith('/uploads/')) {
-                this.deleteUploadedFile(move.hitbox_url);
+            if (move.hitbox_url) {
+                await this.deleteUploadedFile(move.hitbox_url);
             }
             await this.moveRepo.delete({ id: move.id });
             return { message: 'Character move deleted successfully.' };
@@ -209,6 +169,7 @@ exports.CharacterService = CharacterService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(character_base_stat_entity_1.CharacterBaseStat)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        storage_service_1.StorageService])
 ], CharacterService);
 //# sourceMappingURL=character.service.js.map

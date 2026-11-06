@@ -1,5 +1,28 @@
 const tokenKey = 'idol-showdown-token'
 
+// Đọc thời điểm hết hạn (ms) từ payload JWT, trả null nếu token hỏng hoặc không có exp
+export function getTokenExpiry(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(window.atob(base64))
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
+// Lấy token còn hạn; token hết hạn/hỏng sẽ bị xóa luôn khỏi localStorage
+export function getValidToken() {
+  const token = window.localStorage.getItem(tokenKey)
+  if (!token) return null
+  const expiry = getTokenExpiry(token)
+  if (!expiry || expiry <= Date.now()) {
+    window.localStorage.removeItem(tokenKey)
+    return null
+  }
+  return token
+}
+
 export async function apiRequest(url, options = {}) {
   const headers = new Headers(options.headers || {})
   const token = window.localStorage.getItem(tokenKey)
@@ -30,6 +53,7 @@ export async function apiRequest(url, options = {}) {
 }
 
 export const api = {
+  getMe: () => apiRequest('/api/auth/me'),
   getCharacters: () => apiRequest('/api/characters'),
   getCharacter: (id) => apiRequest(`/api/characters/${id}`),
   getGlossaries: () => apiRequest('/api/glossaries'),
