@@ -8,7 +8,7 @@ import pixelKoyori from './assets/characters/Pixel Koyori.png'
 import selectionFrame from './assets/decorative/selection-frame.svg'
 import selectionPolygon from './assets/decorative/selection-polygon.svg'
 import { decodeBase64Image } from './utils/decodeImage'
-import { api, getTokenExpiry, getValidToken } from './api/client'
+import { api, getValidToken } from './api/client'
 import GlossaryBasicScreen from './components/glossary/GlossaryBasicScreen'
 import GlossaryAdvancedScreen from './components/glossary/GlossaryAdvancedScreen'
 import CharacterSelectGrid from './components/character/CharacterSelectGrid'
@@ -27,6 +27,8 @@ function App() {
   // Chỉ coi là đã đăng nhập khi token còn hạn (token hết hạn bị xóa ngay khi tải trang)
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getValidToken()))
   const [loginError, setLoginError] = useState('')
+  // true khi modal login được mở do phiên hết hạn (đăng nhập lại), false khi bấm nút Login
+  const isReloginRef = useRef(false)
   const [activeCard, setActiveCard] = useState(0)
   const [isCardSliding, setIsCardSliding] = useState(false)
   const [isCardResetting, setIsCardResetting] = useState(false)
@@ -172,7 +174,9 @@ function App() {
       window.localStorage.setItem('idol-showdown-token', payload.token)
       setIsLoginOpen(false)
       setIsAuthenticated(true)
-      setActivePage('selection')
+      // Đăng nhập lại sau khi hết phiên thì ở nguyên trang đang xem, không đá về trang chọn nhân vật
+      if (!isReloginRef.current) setActivePage('selection')
+      isReloginRef.current = false
     } catch (error) {
       console.error('Unable to log in.', error)
       setLoginError(error.message || 'Không thể kết nối tới máy chủ.')
@@ -322,6 +326,7 @@ function App() {
 
   useEffect(() => {
     const handleAuthExpired = () => {
+      isReloginRef.current = true
       setIsAuthenticated(false)
       setIsLoginOpen(true)
       setLoginError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
@@ -345,22 +350,38 @@ function App() {
       .catch(() => {})
   }, [])
 
-  // Tự đăng xuất đúng lúc token hết hạn khi đang mở trang
+  // Tự đăng xuất khi token hết hạn lúc đang mở trang.
+  // Không dùng một setTimeout dài vì timer bị treo khi máy sleep / bị trình duyệt hãm ở tab nền:
+  // kiểm tra định kỳ mỗi 30 giây và kiểm tra ngay khi người dùng quay lại tab.
   useEffect(() => {
     if (!isAuthenticated) return
-    const token = getValidToken()
-    if (!token) {
-      setIsAuthenticated(false)
-      return
-    }
-    const timeout = getTokenExpiry(token) - Date.now()
-    if (timeout > 2147483647) return // vượt giới hạn setTimeout, trang hiếm khi mở lâu vậy
-    const timer = window.setTimeout(() => {
-      window.localStorage.removeItem('idol-showdown-token')
+    const checkExpiry = () => {
+      if (getValidToken()) return
       window.dispatchEvent(new CustomEvent('auth-expired'))
-    }, timeout)
-    return () => window.clearTimeout(timer)
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkExpiry()
+    }
+    checkExpiry()
+    const interval = window.setInterval(checkExpiry, 30 * 1000)
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', checkExpiry)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', checkExpiry)
+    }
   }, [isAuthenticated])
+
+  // Đồng bộ trạng thái đăng nhập giữa các tab (đăng xuất/đăng nhập ở tab khác)
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key !== 'idol-showdown-token' && event.key !== null) return
+      setIsAuthenticated(Boolean(getValidToken()))
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
 
   const loadCharacters = async () => {
     try {
@@ -420,7 +441,10 @@ function App() {
         setActivePage('news')
       }}
       isAuthenticated={isAuthenticated}
-      onLogin={() => setIsLoginOpen(true)}
+      onLogin={() => {
+        isReloginRef.current = false
+        setIsLoginOpen(true)
+      }}
       onLogout={handleLogout}
     />
   )
