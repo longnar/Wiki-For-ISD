@@ -13,6 +13,17 @@ export declare class AuthController {
             role: "admin";
         };
     }>;
+    me(req: {
+        user: {
+            id: number;
+            username: string;
+            role: string;
+        };
+    }): {
+        id: number;
+        username: string;
+        role: string;
+    };
     register(registerDto: RegisterDto): Promise<{
         message: string;
         user: {

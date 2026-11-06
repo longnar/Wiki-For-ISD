@@ -8,7 +8,7 @@ import pixelKoyori from './assets/characters/Pixel Koyori.png'
 import selectionFrame from './assets/decorative/selection-frame.svg'
 import selectionPolygon from './assets/decorative/selection-polygon.svg'
 import { decodeBase64Image } from './utils/decodeImage'
-import { api } from './api/client'
+import { api, getTokenExpiry, getValidToken } from './api/client'
 import GlossaryBasicScreen from './components/glossary/GlossaryBasicScreen'
 import GlossaryAdvancedScreen from './components/glossary/GlossaryAdvancedScreen'
 import CharacterSelectGrid from './components/character/CharacterSelectGrid'
@@ -24,7 +24,8 @@ import './App.css'
 function App() {
   const [activePage, setActivePage] = useState('home')
   const [isLoginOpen, setIsLoginOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(window.localStorage.getItem('idol-showdown-token')))
+  // Chỉ coi là đã đăng nhập khi token còn hạn (token hết hạn bị xóa ngay khi tải trang)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getValidToken()))
   const [loginError, setLoginError] = useState('')
   const [activeCard, setActiveCard] = useState(0)
   const [isCardSliding, setIsCardSliding] = useState(false)
@@ -328,6 +329,38 @@ function App() {
     window.addEventListener('auth-expired', handleAuthExpired)
     return () => window.removeEventListener('auth-expired', handleAuthExpired)
   }, [])
+
+  // Xác thực token với server khi tải trang (token ký bằng secret khác, user bị xóa...).
+  // Lỗi ở bước này chỉ đăng xuất im lặng, không bật modal làm phiền khách.
+  useEffect(() => {
+    const token = getValidToken()
+    if (!token) return
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => {
+        if (response.status === 401 || response.status === 403) {
+          window.localStorage.removeItem('idol-showdown-token')
+          setIsAuthenticated(false)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Tự đăng xuất đúng lúc token hết hạn khi đang mở trang
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const token = getValidToken()
+    if (!token) {
+      setIsAuthenticated(false)
+      return
+    }
+    const timeout = getTokenExpiry(token) - Date.now()
+    if (timeout > 2147483647) return // vượt giới hạn setTimeout, trang hiếm khi mở lâu vậy
+    const timer = window.setTimeout(() => {
+      window.localStorage.removeItem('idol-showdown-token')
+      window.dispatchEvent(new CustomEvent('auth-expired'))
+    }, timeout)
+    return () => window.clearTimeout(timer)
+  }, [isAuthenticated])
 
   const loadCharacters = async () => {
     try {
