@@ -137,7 +137,8 @@ export default function GlossaryScreen({
       form.append('term', formData.term);
       form.append('definition', formData.definition);
       form.append('level', level); // Luôn lưu đúng level của trang hiện tại
-      if (formData.video_url) form.append('video_url', formData.video_url);
+      // Luôn gửi video_url (kể cả rỗng) để server xóa được video cũ khi admin xóa trống ô này
+      form.append('video_url', formData.video_url.trim());
       if (formData.image) form.append('image', formData.image);
 
       if (isCreating) {
