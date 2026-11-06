@@ -2,7 +2,9 @@ services:
   app:
     image: mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye
     volumes:
-      - ..:/workspace:cached
+      # Đường dẫn tương đối tính từ thư mục của compose file đầu tiên (../docker-compose.yml = gốc repo),
+      # nên dùng "." chứ không phải ".." (".." sẽ mount nhầm thư mục cha của repo)
+      - .:/workspace:cached
     environment:
       - PORT=5000
       - DB_HOST=mysql
