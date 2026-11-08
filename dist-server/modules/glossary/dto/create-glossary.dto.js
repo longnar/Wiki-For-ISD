@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateGlossaryDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
 class CreateGlossaryDto {
 }
@@ -33,6 +34,12 @@ __decorate([
     (0, class_validator_1.IsEnum)(['basic', 'advanced']),
     __metadata("design:type", String)
 ], CreateGlossaryDto.prototype, "level", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 1, description: 'ID thuật ngữ cha (nếu là thuật ngữ con)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CreateGlossaryDto.prototype, "parent_id", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 'https://youtube.com/watch?v=xxx', description: 'URL Video minh họa' }),
     (0, class_validator_1.IsOptional)(),

@@ -20,12 +20,14 @@ const character_entity_1 = require("../../entities/character.entity");
 const character_move_entity_1 = require("../../entities/character-move.entity");
 const character_base_stat_entity_1 = require("../../entities/character-base-stat.entity");
 const storage_service_1 = require("../storage/storage.service");
+const mizuumi_parser_service_1 = require("./mizuumi-parser.service");
 let CharacterService = class CharacterService {
-    constructor(characterRepo, moveRepo, baseStatRepo, storageService) {
+    constructor(characterRepo, moveRepo, baseStatRepo, storageService, mizuumiParser) {
         this.characterRepo = characterRepo;
         this.moveRepo = moveRepo;
         this.baseStatRepo = baseStatRepo;
         this.storageService = storageService;
+        this.mizuumiParser = mizuumiParser;
     }
     async deleteUploadedFile(relativeUrl) {
         if (!relativeUrl)
@@ -160,6 +162,72 @@ let CharacterService = class CharacterService {
         const saved = await this.baseStatRepo.save(baseStat);
         return { message: 'Character base stats saved successfully.', base_stats: saved };
     }
+    async parseMizuumiWikitext(characterId, wikitext) {
+        const character = await this.getCharacterById(characterId);
+        const existingMoves = await this.moveRepo.find({ where: { character_id: characterId } });
+        const parsed = this.mizuumiParser.parseWikitext(wikitext, character.name);
+        const diffed = this.mizuumiParser.diffMoves(parsed, existingMoves);
+        return {
+            character: { id: character.id, name: character.name },
+            totalParsed: parsed.length,
+            moves: diffed,
+        };
+    }
+    async batchSaveMoves(characterId, moves) {
+        await this.getCharacterById(characterId);
+        if (!Array.isArray(moves) || moves.length === 0) {
+            throw new common_1.BadRequestException('Danh sách đòn đánh trống.');
+        }
+        let inserted = 0;
+        let updated = 0;
+        for (const m of moves) {
+            if (!m.CHAR_MOVE)
+                continue;
+            let existing = m.existingMoveId
+                ? await this.moveRepo.findOne({ where: { id: m.existingMoveId, character_id: characterId } })
+                : null;
+            if (!existing) {
+                existing = await this.moveRepo.findOne({
+                    where: { character_id: characterId, CHAR_MOVE: m.CHAR_MOVE },
+                });
+            }
+            const movePayload = {
+                character_id: characterId,
+                CHAR_NAME: m.CHAR_NAME || '',
+                CHAR_MOVE: m.CHAR_MOVE,
+                DAMAGE: m.DAMAGE ?? null,
+                START_UP: m.START_UP ?? null,
+                ACTIVE: m.ACTIVE ?? null,
+                RECOVERY: m.RECOVERY ?? null,
+                ADV_ON_BLOCK: m.ADV_ON_BLOCK ?? null,
+                ADV_ON_HIT: m.ADV_ON_HIT ?? null,
+                INVULNERABILITY: m.INVULNERABILITY || null,
+                guard: m.guard || 'Mid',
+                move_type: m.move_type || 'normal',
+                version: m.version || null,
+                properties: m.properties || null,
+                description: m.description || null,
+                hitbox_url: m.hitbox_url || null,
+                hitbox_caption: m.hitbox_caption || null,
+            };
+            if (existing) {
+                Object.assign(existing, movePayload);
+                await this.moveRepo.save(existing);
+                updated++;
+            }
+            else {
+                const newMove = this.moveRepo.create(movePayload);
+                await this.moveRepo.save(newMove);
+                inserted++;
+            }
+        }
+        return {
+            message: `Đã lưu thành công ${inserted + updated} đòn đánh (${inserted} thêm mới, ${updated} cập nhật).`,
+            inserted,
+            updated,
+            total: inserted + updated,
+        };
+    }
 };
 exports.CharacterService = CharacterService;
 exports.CharacterService = CharacterService = __decorate([
@@ -170,6 +238,7 @@ exports.CharacterService = CharacterService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        storage_service_1.StorageService])
+        storage_service_1.StorageService,
+        mizuumi_parser_service_1.MizuumiParserService])
 ], CharacterService);
 //# sourceMappingURL=character.service.js.map

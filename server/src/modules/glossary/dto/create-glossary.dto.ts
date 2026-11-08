@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { GlossaryLevel } from '../../../entities/glossary.entity';
 
@@ -17,6 +18,11 @@ export class CreateGlossaryDto {
   @IsOptional()
   @IsEnum(['basic', 'advanced'])
   level?: GlossaryLevel;
+
+  @ApiPropertyOptional({ example: 1, description: 'ID thuật ngữ cha (nếu là thuật ngữ con)' })
+  @IsOptional()
+  @Type(() => Number)
+  parent_id?: number | null;
 
   @ApiPropertyOptional({ example: 'https://youtube.com/watch?v=xxx', description: 'URL Video minh họa' })
   @IsOptional()

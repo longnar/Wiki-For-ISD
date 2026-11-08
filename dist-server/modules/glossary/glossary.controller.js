@@ -53,6 +53,7 @@ const multer_1 = require("multer");
 const path = __importStar(require("path"));
 const glossary_service_1 = require("./glossary.service");
 const create_glossary_dto_1 = require("./dto/create-glossary.dto");
+const update_glossary_dto_1 = require("./dto/update-glossary.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const multerOptions = {
@@ -127,7 +128,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:paramtypes", [Number, update_glossary_dto_1.UpdateGlossaryDto, Object]),
     __metadata("design:returntype", void 0)
 ], GlossaryController.prototype, "updateGlossary", null);
 __decorate([

@@ -1639,3 +1639,385 @@
   }
 }
 
+/* =========================================================
+   MIZUUMI WIKI IMPORTER MODAL & BUTTONS
+   ========================================================= */
+
+.figma-detail-admin-moves-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.figma-detail-btn-import {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+  color: #a7f3d0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.figma-detail-btn-import:hover {
+  background: #10b981;
+  color: #064e3b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.figma-mizuumi-modal-container {
+  position: relative;
+  width: min(1200px, 94vw);
+  max-height: 88vh;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-sizing: border-box;
+  gap: 16px;
+  color: #fff;
+  z-index: 1000;
+  animation: figmaModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.figma-mizuumi-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 12px;
+}
+
+.figma-mizuumi-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.figma-mizuumi-modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: -0.01em;
+}
+
+.figma-mizuumi-modal-char-badge {
+  font-size: 13px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.figma-mizuumi-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 26px;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.figma-mizuumi-modal-close:hover {
+  color: #ef4444;
+}
+
+.figma-mizuumi-error-alert {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.figma-mizuumi-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.figma-mizuumi-guide-box {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.figma-mizuumi-guide-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #bae6fd;
+}
+
+.figma-mizuumi-guide-text code {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.figma-mizuumi-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #e2e8f0;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 280px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.figma-mizuumi-textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.figma-mizuumi-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.figma-mizuumi-btn-primary {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #0284c7;
+  border: 1px solid #38bdf8;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+}
+
+.figma-mizuumi-btn-primary:hover:not(:disabled) {
+  background: #0369a1;
+  border-color: #7dd3fc;
+  transform: translateY(-1px);
+}
+
+.figma-mizuumi-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Thống kê và bộ chọn nhanh */
+.figma-mizuumi-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.figma-mizuumi-stats-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.figma-mizuumi-stat-pill {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.figma-mizuumi-stat-pill.total {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.figma-mizuumi-stat-pill.new {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.figma-mizuumi-stat-pill.modified {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.figma-mizuumi-stat-pill.unchanged {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.figma-mizuumi-quick-selects {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.figma-mizuumi-btn-sm {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #cbd5e1;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.figma-mizuumi-btn-sm:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+/* Bảng Preview đối chiếu */
+.figma-mizuumi-preview-table-wrap {
+  flex: 1;
+  min-height: 250px;
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.figma-mizuumi-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: center;
+}
+
+.figma-mizuumi-preview-table thead {
+  position: sticky;
+  top: 0;
+  background: #0f172a;
+  z-index: 10;
+}
+
+.figma-mizuumi-preview-table th {
+  padding: 10px 8px;
+  color: #94a3b8;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.figma-mizuumi-preview-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+}
+
+.figma-mizuumi-preview-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.figma-mizuumi-preview-table tbody tr:hover {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.figma-mizuumi-preview-table tbody tr.selected {
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.figma-mizuumi-badge-status {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.figma-mizuumi-badge-status.new {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border: 1px solid #10b981;
+}
+
+.figma-mizuumi-badge-status.modified {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid #f59e0b;
+}
+
+.figma-mizuumi-badge-status.unchanged {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+}
+
+.figma-mizuumi-version-pill {
+  display: inline-block;
+  margin-left: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: normal;
+}
+
+.figma-mizuumi-type-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.figma-mizuumi-type-pill.normal {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.figma-mizuumi-type-pill.special {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+}
+
+.figma-mizuumi-type-pill.super {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+}
+

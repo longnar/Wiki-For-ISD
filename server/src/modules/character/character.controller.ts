@@ -145,4 +145,28 @@ export class CharacterController {
   upsertCharacterBaseStats(@Param('id', ParseIntPipe) id: number, @Body() dto: UpsertBaseStatsDto) {
     return this.characterService.upsertCharacterBaseStats(id, dto);
   }
+
+  @Post('admin/characters/:id/parse-mizuumi')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bóc tách mã nguồn Wikitext Mizuumi Wiki và đối chiếu với CSDL (Admin)' })
+  parseMizuumi(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('wikitext') wikitext: string,
+  ) {
+    return this.characterService.parseMizuumiWikitext(id, wikitext || '');
+  }
+
+  @Post('admin/characters/:id/batch-moves')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lưu hàng loạt đòn đánh đã tích chọn vào CSDL (Admin)' })
+  batchSaveMoves(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('moves') moves: any[],
+  ) {
+    return this.characterService.batchSaveMoves(id, moves || []);
+  }
 }

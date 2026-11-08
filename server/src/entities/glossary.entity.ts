@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 
 export type GlossaryLevel = 'basic' | 'advanced';
 
@@ -15,6 +15,16 @@ export class Glossary {
 
   @Column({ type: 'enum', enum: ['basic', 'advanced'], default: 'basic' })
   level: GlossaryLevel;
+
+  @Column({ name: 'parent_id', type: 'int', nullable: true })
+  parent_id: number | null;
+
+  @ManyToOne(() => Glossary, (glossary) => glossary.children, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'parent_id' })
+  parent: Glossary | null;
+
+  @OneToMany(() => Glossary, (glossary) => glossary.parent)
+  children: Glossary[];
 
   @Column({ length: 255, nullable: true })
   image_url: string | null;

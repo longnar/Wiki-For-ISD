@@ -75,10 +75,14 @@ CREATE TABLE IF NOT EXISTS glossaries (
     term VARCHAR(100) NOT NULL UNIQUE,
     definition TEXT NOT NULL,
     level ENUM('basic', 'advanced') NOT NULL DEFAULT 'basic',
+    parent_id INT NULL DEFAULT NULL,
     image_url VARCHAR(255),
     video_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_glossaries_parent
+        FOREIGN KEY (parent_id) REFERENCES glossaries(id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Seed Default Admin User

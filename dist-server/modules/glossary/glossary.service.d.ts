@@ -1,6 +1,7 @@
 import { Repository } from 'typeorm';
 import { Glossary } from '../../entities/glossary.entity';
 import { CreateGlossaryDto } from './dto/create-glossary.dto';
+import { UpdateGlossaryDto } from './dto/update-glossary.dto';
 import { StorageService } from '../storage/storage.service';
 export declare class GlossaryService {
     private glossaryRepo;
@@ -12,7 +13,7 @@ export declare class GlossaryService {
         message: string;
         glossary: Glossary;
     }>;
-    updateGlossary(id: number, dto: Partial<CreateGlossaryDto>, file?: Express.Multer.File): Promise<{
+    updateGlossary(id: number, dto: UpdateGlossaryDto, file?: Express.Multer.File): Promise<{
         message: string;
         glossary: Glossary;
     }>;

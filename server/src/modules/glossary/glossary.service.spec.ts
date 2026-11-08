@@ -65,7 +65,10 @@ describe('GlossaryService', () => {
       const result = await service.getAllGlossaries();
       expect(result).toHaveLength(1);
       expect(result[0].term).toBe('Hitstun');
-      expect(repoMock.find).toHaveBeenCalledWith({ order: { term: 'ASC' } });
+      expect(repoMock.find).toHaveBeenCalledWith({
+        relations: ['parent', 'children'],
+        order: { term: 'ASC' },
+      });
     });
   });
 

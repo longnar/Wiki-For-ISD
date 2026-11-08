@@ -10,6 +10,7 @@ import { CreateCharacterDto } from './dto/create-character.dto';
 import { CreateMoveDto } from './dto/create-move.dto';
 import { UpsertBaseStatsDto } from './dto/create-move.dto';
 import { StorageService } from '../storage/storage.service';
+import { MizuumiParserService, ParsedMizuumiMove } from './mizuumi-parser.service';
 
 @Injectable()
 export class CharacterService {
@@ -21,6 +22,7 @@ export class CharacterService {
     @InjectRepository(CharacterBaseStat)
     private baseStatRepo: Repository<CharacterBaseStat>,
     private storageService: StorageService,
+    private mizuumiParser: MizuumiParserService,
   ) {}
 
   private async deleteUploadedFile(relativeUrl: string | null) {
@@ -164,5 +166,79 @@ export class CharacterService {
     }
     const saved = await this.baseStatRepo.save(baseStat);
     return { message: 'Character base stats saved successfully.', base_stats: saved };
+  }
+
+  async parseMizuumiWikitext(characterId: number, wikitext: string) {
+    const character = await this.getCharacterById(characterId);
+    const existingMoves = await this.moveRepo.find({ where: { character_id: characterId } });
+    const parsed = this.mizuumiParser.parseWikitext(wikitext, character.name);
+    const diffed = this.mizuumiParser.diffMoves(parsed, existingMoves);
+
+    return {
+      character: { id: character.id, name: character.name },
+      totalParsed: parsed.length,
+      moves: diffed,
+    };
+  }
+
+  async batchSaveMoves(characterId: number, moves: ParsedMizuumiMove[]) {
+    await this.getCharacterById(characterId);
+    if (!Array.isArray(moves) || moves.length === 0) {
+      throw new BadRequestException('Danh sách đòn đánh trống.');
+    }
+
+    let inserted = 0;
+    let updated = 0;
+
+    for (const m of moves) {
+      if (!m.CHAR_MOVE) continue;
+
+      let existing = m.existingMoveId
+        ? await this.moveRepo.findOne({ where: { id: m.existingMoveId, character_id: characterId } })
+        : null;
+
+      if (!existing) {
+        existing = await this.moveRepo.findOne({
+          where: { character_id: characterId, CHAR_MOVE: m.CHAR_MOVE },
+        });
+      }
+
+      const movePayload = {
+        character_id: characterId,
+        CHAR_NAME: m.CHAR_NAME || '',
+        CHAR_MOVE: m.CHAR_MOVE,
+        DAMAGE: m.DAMAGE ?? null,
+        START_UP: m.START_UP ?? null,
+        ACTIVE: m.ACTIVE ?? null,
+        RECOVERY: m.RECOVERY ?? null,
+        ADV_ON_BLOCK: m.ADV_ON_BLOCK ?? null,
+        ADV_ON_HIT: m.ADV_ON_HIT ?? null,
+        INVULNERABILITY: m.INVULNERABILITY || null,
+        guard: m.guard || 'Mid',
+        move_type: m.move_type || 'normal',
+        version: m.version || null,
+        properties: m.properties || null,
+        description: m.description || null,
+        hitbox_url: m.hitbox_url || null,
+        hitbox_caption: m.hitbox_caption || null,
+      };
+
+      if (existing) {
+        Object.assign(existing, movePayload);
+        await this.moveRepo.save(existing);
+        updated++;
+      } else {
+        const newMove = this.moveRepo.create(movePayload);
+        await this.moveRepo.save(newMove);
+        inserted++;
+      }
+    }
+
+    return {
+      message: `Đã lưu thành công ${inserted + updated} đòn đánh (${inserted} thêm mới, ${updated} cập nhật).`,
+      inserted,
+      updated,
+      total: inserted + updated,
+    };
   }
 }

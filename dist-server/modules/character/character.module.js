@@ -14,6 +14,7 @@ const character_move_entity_1 = require("../../entities/character-move.entity");
 const character_base_stat_entity_1 = require("../../entities/character-base-stat.entity");
 const character_service_1 = require("./character.service");
 const character_controller_1 = require("./character.controller");
+const mizuumi_parser_service_1 = require("./mizuumi-parser.service");
 let CharacterModule = class CharacterModule {
 };
 exports.CharacterModule = CharacterModule;
@@ -21,8 +22,8 @@ exports.CharacterModule = CharacterModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([character_entity_1.Character, character_move_entity_1.CharacterMove, character_base_stat_entity_1.CharacterBaseStat])],
         controllers: [character_controller_1.CharacterController],
-        providers: [character_service_1.CharacterService],
-        exports: [character_service_1.CharacterService],
+        providers: [character_service_1.CharacterService, mizuumi_parser_service_1.MizuumiParserService],
+        exports: [character_service_1.CharacterService, mizuumi_parser_service_1.MizuumiParserService],
     })
 ], CharacterModule);
 //# sourceMappingURL=character.module.js.map
