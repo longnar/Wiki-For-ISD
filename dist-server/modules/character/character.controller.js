@@ -114,6 +114,12 @@ let CharacterController = class CharacterController {
     upsertCharacterBaseStats(id, dto) {
         return this.characterService.upsertCharacterBaseStats(id, dto);
     }
+    parseMizuumi(id, wikitext) {
+        return this.characterService.parseMizuumiWikitext(id, wikitext || '');
+    }
+    batchSaveMoves(id, moves) {
+        return this.characterService.batchSaveMoves(id, moves || []);
+    }
 };
 exports.CharacterController = CharacterController;
 __decorate([
@@ -242,6 +248,30 @@ __decorate([
     __metadata("design:paramtypes", [Number, create_move_dto_1.UpsertBaseStatsDto]),
     __metadata("design:returntype", void 0)
 ], CharacterController.prototype, "upsertCharacterBaseStats", null);
+__decorate([
+    (0, common_1.Post)('admin/characters/:id/parse-mizuumi'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, jwt_auth_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Bóc tách mã nguồn Wikitext Mizuumi Wiki và đối chiếu với CSDL (Admin)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('wikitext')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", void 0)
+], CharacterController.prototype, "parseMizuumi", null);
+__decorate([
+    (0, common_1.Post)('admin/characters/:id/batch-moves'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, jwt_auth_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Lưu hàng loạt đòn đánh đã tích chọn vào CSDL (Admin)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('moves')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Array]),
+    __metadata("design:returntype", void 0)
+], CharacterController.prototype, "batchSaveMoves", null);
 exports.CharacterController = CharacterController = __decorate([
     (0, swagger_1.ApiTags)('Characters'),
     (0, common_1.Controller)('api'),

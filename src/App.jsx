@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import heroArtImage from './assets/characters/IdolShowdownNextFesBiboo_1.png'
 import contactCharacterImage from './assets/characters/fbk-eating.gif'
 import gameLogo from './assets/branding/IdolShowdownNF_logo.png'
@@ -23,6 +23,7 @@ import './App.css'
 
 function App() {
   const [activePage, setActivePage] = useState('home')
+  const [selectedGlossaryId, setSelectedGlossaryId] = useState(null)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   // Chỉ coi là đã đăng nhập khi token còn hạn (token hết hạn bị xóa ngay khi tải trang)
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getValidToken()))
@@ -435,6 +436,7 @@ function App() {
         setActivePage('selection')
       }}
       onSelectGlossary={(item) => {
+        setSelectedGlossaryId(item.id)
         setActivePage(item.level === 'advanced' ? 'glossary-advanced' : 'glossary-basic')
       }}
       onSelectNews={() => {
@@ -608,8 +610,15 @@ function App() {
       {renderSharedHeader()}
       <GlossaryBasicScreen
         isAuthenticated={isAuthenticated}
-        onBackHome={() => setActivePage('glossary')}
-        onNavigateToAdvanced={() => setActivePage('glossary-advanced')}
+        initialTermId={selectedGlossaryId}
+        onBackHome={() => {
+          setSelectedGlossaryId(null)
+          setActivePage('glossary')
+        }}
+        onNavigateToAdvanced={(termId) => {
+          setSelectedGlossaryId(termId || null)
+          setActivePage('glossary-advanced')
+        }}
       />
     </>
   )
@@ -619,8 +628,15 @@ function App() {
       {renderSharedHeader()}
       <GlossaryAdvancedScreen
         isAuthenticated={isAuthenticated}
-        onBackHome={() => setActivePage('glossary')}
-        onNavigateToBasic={() => setActivePage('glossary-basic')}
+        initialTermId={selectedGlossaryId}
+        onBackHome={() => {
+          setSelectedGlossaryId(null)
+          setActivePage('glossary')
+        }}
+        onNavigateToBasic={(termId) => {
+          setSelectedGlossaryId(termId || null)
+          setActivePage('glossary-basic')
+        }}
       />
     </>
   )

@@ -31,6 +31,19 @@ __decorate([
     __metadata("design:type", String)
 ], Glossary.prototype, "level", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'parent_id', type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], Glossary.prototype, "parent_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => Glossary, (glossary) => glossary.children, { nullable: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.JoinColumn)({ name: 'parent_id' }),
+    __metadata("design:type", Glossary)
+], Glossary.prototype, "parent", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Glossary, (glossary) => glossary.parent),
+    __metadata("design:type", Array)
+], Glossary.prototype, "children", void 0);
+__decorate([
     (0, typeorm_1.Column)({ length: 255, nullable: true }),
     __metadata("design:type", String)
 ], Glossary.prototype, "image_url", void 0);

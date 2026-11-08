@@ -5,6 +5,7 @@ import { diskStorage } from 'multer';
 import * as path from 'path';
 import { GlossaryService } from './glossary.service';
 import { CreateGlossaryDto } from './dto/create-glossary.dto';
+import { UpdateGlossaryDto } from './dto/update-glossary.dto';
 import { JwtAuthGuard, RolesGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
@@ -60,7 +61,7 @@ export class GlossaryController {
   @ApiOperation({ summary: 'Cập nhật thuật ngữ Glossary (Admin)' })
   updateGlossary(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Partial<CreateGlossaryDto>,
+    @Body() dto: UpdateGlossaryDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.glossaryService.updateGlossary(id, dto, file);

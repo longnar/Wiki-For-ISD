@@ -3,6 +3,7 @@ import { characterApi } from '../../api/character.api';
 import { getCharacterArt, getCharacterCutout } from '../../utils/characterAssets';
 import { getFallbackDetails } from '../../data/characterFallbackData';
 import selectionPolygon from '../../assets/decorative/selection-polygon.svg';
+import MizuumiImportModal from './MizuumiImportModal';
 import './CharacterDetailView.css';
 
 export default function CharacterDetailView({ character, isAuthenticated = false, onBack, onCharacterUpdated }) {
@@ -30,6 +31,7 @@ export default function CharacterDetailView({ character, isAuthenticated = false
 
   // Move modal state (Admin)
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingMove, setEditingMove] = useState(null);
   const [moveForm, setMoveForm] = useState({
     CHAR_MOVE: '',
@@ -249,6 +251,31 @@ export default function CharacterDetailView({ character, isAuthenticated = false
       setHitboxPreview('');
     } catch (err) {
       alert('Không thể lưu đòn đánh: ' + err.message);
+    }
+  };
+
+  const handleImportSuccess = async (savedMoves) => {
+    try {
+      if (character?.id && typeof character.id === 'number') {
+        await loadDataFromApi(character.id);
+      } else {
+        setMoves((prev) => {
+          const moveMap = new Map();
+          prev.forEach((m) => moveMap.set(m.CHAR_MOVE.toLowerCase(), m));
+          savedMoves.forEach((m) => {
+            const existing = moveMap.get(m.CHAR_MOVE.toLowerCase());
+            if (existing) {
+              Object.assign(existing, m);
+            } else {
+              moveMap.set(m.CHAR_MOVE.toLowerCase(), { ...m, id: Date.now() + Math.random() });
+            }
+          });
+          return Array.from(moveMap.values());
+        });
+      }
+      alert(`Đã lưu thành công ${savedMoves.length} đòn đánh cho nhân vật ${character?.name}!`);
+    } catch (err) {
+      console.error('Lỗi sau khi import:', err);
     }
   };
 
@@ -707,14 +734,24 @@ export default function CharacterDetailView({ character, isAuthenticated = false
               </div>
 
               {isAuthenticated && (
-                <button
-                  type="button"
-                  className="figma-detail-btn-add"
-                  onClick={handleOpenAddMove}
-                  title="Thêm đòn đánh mới"
-                >
-                  + Thêm Đòn
-                </button>
+                <div className="figma-detail-admin-moves-btn-group">
+                  <button
+                    type="button"
+                    className="figma-detail-btn-import"
+                    onClick={() => setIsImportModalOpen(true)}
+                    title="Nhập đòn đánh từ mã nguồn Mizuumi Wiki"
+                  >
+                    📥 Nhập từ Wiki
+                  </button>
+                  <button
+                    type="button"
+                    className="figma-detail-btn-add"
+                    onClick={handleOpenAddMove}
+                    title="Thêm đòn đánh mới"
+                  >
+                    + Thêm Đòn
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1358,6 +1395,15 @@ export default function CharacterDetailView({ character, isAuthenticated = false
           </div>
         </div>
       )}
+
+      {/* Modal Nhập dữ liệu Frame Data từ Mizuumi Wiki */}
+      <MizuumiImportModal
+        isOpen={isImportModalOpen}
+        character={character}
+        existingMoves={moves}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={handleImportSuccess}
+      />
     </main>
   );
 }

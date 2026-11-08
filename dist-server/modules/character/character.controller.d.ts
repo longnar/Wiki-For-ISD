@@ -34,4 +34,18 @@ export declare class CharacterController {
         message: string;
         base_stats: import("../../entities/character-base-stat.entity").CharacterBaseStat;
     }>;
+    parseMizuumi(id: number, wikitext: string): Promise<{
+        character: {
+            id: number;
+            name: string;
+        };
+        totalParsed: number;
+        moves: import("./mizuumi-parser.service").ParsedMizuumiMove[];
+    }>;
+    batchSaveMoves(id: number, moves: any[]): Promise<{
+        message: string;
+        inserted: number;
+        updated: number;
+        total: number;
+    }>;
 }

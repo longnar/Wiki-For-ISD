@@ -6,12 +6,14 @@ import { CreateCharacterDto } from './dto/create-character.dto';
 import { CreateMoveDto } from './dto/create-move.dto';
 import { UpsertBaseStatsDto } from './dto/create-move.dto';
 import { StorageService } from '../storage/storage.service';
+import { MizuumiParserService, ParsedMizuumiMove } from './mizuumi-parser.service';
 export declare class CharacterService {
     private characterRepo;
     private moveRepo;
     private baseStatRepo;
     private storageService;
-    constructor(characterRepo: Repository<Character>, moveRepo: Repository<CharacterMove>, baseStatRepo: Repository<CharacterBaseStat>, storageService: StorageService);
+    private mizuumiParser;
+    constructor(characterRepo: Repository<Character>, moveRepo: Repository<CharacterMove>, baseStatRepo: Repository<CharacterBaseStat>, storageService: StorageService, mizuumiParser: MizuumiParserService);
     private deleteUploadedFile;
     getAllCharacters(): Promise<Character[]>;
     getCharacterById(id: number): Promise<Character>;
@@ -42,5 +44,19 @@ export declare class CharacterService {
     upsertCharacterBaseStats(characterId: number, dto: UpsertBaseStatsDto): Promise<{
         message: string;
         base_stats: CharacterBaseStat;
+    }>;
+    parseMizuumiWikitext(characterId: number, wikitext: string): Promise<{
+        character: {
+            id: number;
+            name: string;
+        };
+        totalParsed: number;
+        moves: ParsedMizuumiMove[];
+    }>;
+    batchSaveMoves(characterId: number, moves: ParsedMizuumiMove[]): Promise<{
+        message: string;
+        inserted: number;
+        updated: number;
+        total: number;
     }>;
 }

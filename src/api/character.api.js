@@ -26,4 +26,14 @@ export const characterApi = {
     }),
   removeMove: (id, moveId) => apiRequest(`/api/admin/characters/${id}/moves/${moveId}`, { method: 'DELETE' }),
   saveBaseStats: (id, body) => apiRequest(`/api/admin/characters/${id}/base-stats`, { method: 'PUT', body: JSON.stringify(body) }),
+  parseMizuumi: (id, wikitext) =>
+    apiRequest(`/api/admin/characters/${id}/parse-mizuumi`, {
+      method: 'POST',
+      body: JSON.stringify({ wikitext }),
+    }),
+  batchSaveMoves: (id, moves) =>
+    apiRequest(`/api/admin/characters/${id}/batch-moves`, {
+      method: 'POST',
+      body: JSON.stringify({ moves }),
+    }),
 }

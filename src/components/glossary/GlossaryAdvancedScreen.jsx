@@ -2,6 +2,7 @@ import GlossaryScreen from './GlossaryScreen';
 
 export default function GlossaryAdvancedScreen({
   isAuthenticated = false,
+  initialTermId = null,
   onBackHome,
   onNavigateToBasic,
 }) {
@@ -9,6 +10,7 @@ export default function GlossaryAdvancedScreen({
     <GlossaryScreen
       level="advanced"
       isAuthenticated={isAuthenticated}
+      initialTermId={initialTermId}
       onBackHome={onBackHome}
       onSwitchPage={onNavigateToBasic}
     />
