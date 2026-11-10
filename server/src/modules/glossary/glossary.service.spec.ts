@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { GlossaryService } from './glossary.service';
 import { Glossary } from '../../entities/glossary.entity';
 import { StorageService } from '../storage/storage.service';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('GlossaryService', () => {
   let service: GlossaryService;
@@ -15,18 +15,39 @@ describe('GlossaryService', () => {
     term: 'Hitstun',
     definition: 'Thời gian nhân vật bị choáng sau khi trúng đòn.',
     level: 'basic',
+    parent_id: null,
+    parent: null,
+    children: [],
     image_url: '/uploads/hitstun.png',
     video_url: null,
     created_at: new Date(),
     updated_at: new Date(),
   };
 
+  const mockChildGlossary: Glossary = {
+    ...mockGlossary,
+    id: 2,
+    term: 'Blockstun',
+    parent_id: 1,
+    image_url: null,
+  };
+
+  const mockGrandChildGlossary: Glossary = {
+    ...mockGlossary,
+    id: 3,
+    term: 'Pushblock',
+    parent_id: 2,
+    image_url: null,
+  };
+
   beforeEach(async () => {
     repoMock = {
       find: jest.fn().mockResolvedValue([mockGlossary]),
       findOne: jest.fn().mockImplementation(({ where }) => {
-        if (where?.id === 1) return Promise.resolve(mockGlossary);
-        if (where?.term === 'Hitstun') return Promise.resolve(mockGlossary);
+        if (where?.id === 1) return Promise.resolve({ ...mockGlossary });
+        if (where?.id === 2) return Promise.resolve({ ...mockChildGlossary });
+        if (where?.id === 3) return Promise.resolve({ ...mockGrandChildGlossary });
+        if (where?.term === 'Hitstun') return Promise.resolve({ ...mockGlossary });
         return Promise.resolve(null);
       }),
       create: jest.fn().mockImplementation((dto) => ({ id: 2, ...dto })),
@@ -82,6 +103,26 @@ describe('GlossaryService', () => {
 
     it('should throw NotFoundException if term does not exist', async () => {
       await expect(service.deleteGlossary(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateGlossary hierarchy & cycle detection', () => {
+    it('should allow valid multi-level parent assignment (grandchild -> child -> root)', async () => {
+      const result = await service.updateGlossary(3, { parent_id: 2 });
+      expect(result.glossary.parent_id).toBe(2);
+      expect(repoMock.save).toHaveBeenCalled();
+    });
+
+    it('should reject self-parenting', async () => {
+      await expect(service.updateGlossary(1, { parent_id: 1 })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject setting a descendant (grandchild) as parent to prevent cycles', async () => {
+      await expect(service.updateGlossary(1, { parent_id: 3 })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject setting non-existent parent_id', async () => {
+      await expect(service.updateGlossary(2, { parent_id: 999 })).rejects.toThrow(BadRequestException);
     });
   });
 });

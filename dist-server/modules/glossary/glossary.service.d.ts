@@ -8,6 +8,7 @@ export declare class GlossaryService {
     private storageService;
     constructor(glossaryRepo: Repository<Glossary>, storageService: StorageService);
     private deleteUploadedFile;
+    private validateNoCycle;
     getAllGlossaries(): Promise<Glossary[]>;
     createGlossary(dto: CreateGlossaryDto, file?: Express.Multer.File): Promise<{
         message: string;

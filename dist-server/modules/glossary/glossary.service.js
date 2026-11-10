@@ -28,6 +28,33 @@ let GlossaryService = class GlossaryService {
             return;
         await this.storageService.deleteFile(relativeUrl);
     }
+    async validateNoCycle(termId, proposedParentId) {
+        if (proposedParentId === termId) {
+            throw new common_1.BadRequestException('Một thuật ngữ không thể làm cha của chính nó.');
+        }
+        const visited = new Set([termId]);
+        let currentParentId = proposedParentId;
+        let steps = 0;
+        const MAX_DEPTH = 100;
+        while (currentParentId && steps < MAX_DEPTH) {
+            if (visited.has(currentParentId)) {
+                throw new common_1.BadRequestException('Không thể chọn thuật ngữ con/cháu làm cha vì sẽ tạo ra vòng lặp phân cấp.');
+            }
+            visited.add(currentParentId);
+            const ancestor = await this.glossaryRepo.findOne({
+                where: { id: currentParentId },
+                select: ['id', 'parent_id'],
+            });
+            if (!ancestor) {
+                if (steps === 0) {
+                    throw new common_1.BadRequestException('Thuật ngữ cha được chọn không tồn tại.');
+                }
+                break;
+            }
+            currentParentId = ancestor.parent_id;
+            steps++;
+        }
+    }
     async getAllGlossaries() {
         return this.glossaryRepo.find({
             relations: ['parent', 'children'],
@@ -82,6 +109,23 @@ let GlossaryService = class GlossaryService {
         if (!glossary) {
             throw new common_1.NotFoundException('Glossary term not found.');
         }
+        if (dto.term && dto.term !== glossary.term) {
+            const existing = await this.glossaryRepo.findOne({ where: { term: dto.term, id: (0, typeorm_2.Not)(id) } });
+            if (existing) {
+                throw new common_1.BadRequestException(`The term '${dto.term}' is already in use.`);
+            }
+        }
+        let nextParentId = glossary.parent_id;
+        if (dto.parent_id !== undefined) {
+            if (dto.parent_id === null || `${dto.parent_id}`.trim() === '' || Number(dto.parent_id) === 0) {
+                nextParentId = null;
+            }
+            else {
+                const pId = Number(dto.parent_id);
+                await this.validateNoCycle(id, pId);
+                nextParentId = pId;
+            }
+        }
         let imageUrl = glossary.image_url;
         if (file) {
             if (glossary.image_url)
@@ -93,30 +137,7 @@ let GlossaryService = class GlossaryService {
                 await this.deleteUploadedFile(glossary.image_url);
             imageUrl = null;
         }
-        if (dto.term && dto.term !== glossary.term) {
-            const existing = await this.glossaryRepo.findOne({ where: { term: dto.term, id: (0, typeorm_2.Not)(id) } });
-            if (existing) {
-                if (file)
-                    await this.deleteUploadedFile(imageUrl);
-                throw new common_1.BadRequestException(`The term '${dto.term}' is already in use.`);
-            }
-        }
-        if (dto.parent_id !== undefined) {
-            if (dto.parent_id === null || `${dto.parent_id}`.trim() === '' || Number(dto.parent_id) === 0) {
-                glossary.parent_id = null;
-            }
-            else {
-                const pId = Number(dto.parent_id);
-                if (pId === id) {
-                    throw new common_1.BadRequestException('Một thuật ngữ không thể làm cha của chính nó.');
-                }
-                const parentTerm = await this.glossaryRepo.findOne({ where: { id: pId } });
-                if (!parentTerm) {
-                    throw new common_1.BadRequestException('Thuật ngữ cha được chọn không tồn tại.');
-                }
-                glossary.parent_id = pId;
-            }
-        }
+        glossary.parent_id = nextParentId;
         glossary.term = dto.term !== undefined ? dto.term : glossary.term;
         glossary.definition = dto.definition !== undefined ? dto.definition : glossary.definition;
         glossary.level = dto.level !== undefined ? (dto.level === 'advanced' ? 'advanced' : 'basic') : glossary.level;

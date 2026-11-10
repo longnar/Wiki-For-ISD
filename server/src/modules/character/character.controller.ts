@@ -5,6 +5,7 @@ import { diskStorage } from 'multer';
 import * as path from 'path';
 import { CharacterService } from './character.service';
 import { CreateCharacterDto } from './dto/create-character.dto';
+import { UpdateCharacterDto } from './dto/update-character.dto';
 import { CreateMoveDto, UpsertBaseStatsDto } from './dto/create-move.dto';
 import { JwtAuthGuard, RolesGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -79,7 +80,7 @@ export class CharacterController {
   @ApiOperation({ summary: 'Cập nhật nhân vật (Admin)' })
   updateCharacter(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Partial<CreateCharacterDto>,
+    @Body() dto: UpdateCharacterDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.characterService.updateCharacter(id, dto, file);

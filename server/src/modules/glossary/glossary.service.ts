@@ -19,6 +19,39 @@ export class GlossaryService {
     await this.storageService.deleteFile(relativeUrl);
   }
 
+  private async validateNoCycle(termId: number, proposedParentId: number): Promise<void> {
+    if (proposedParentId === termId) {
+      throw new BadRequestException('Một thuật ngữ không thể làm cha của chính nó.');
+    }
+
+    const visited = new Set<number>([termId]);
+    let currentParentId: number | null | undefined = proposedParentId;
+    let steps = 0;
+    const MAX_DEPTH = 100;
+
+    while (currentParentId && steps < MAX_DEPTH) {
+      if (visited.has(currentParentId)) {
+        throw new BadRequestException(
+          'Không thể chọn thuật ngữ con/cháu làm cha vì sẽ tạo ra vòng lặp phân cấp.',
+        );
+      }
+      visited.add(currentParentId);
+
+      const ancestor = await this.glossaryRepo.findOne({
+        where: { id: currentParentId },
+        select: ['id', 'parent_id'],
+      });
+      if (!ancestor) {
+        if (steps === 0) {
+          throw new BadRequestException('Thuật ngữ cha được chọn không tồn tại.');
+        }
+        break;
+      }
+      currentParentId = ancestor.parent_id;
+      steps++;
+    }
+  }
+
   async getAllGlossaries(): Promise<Glossary[]> {
     return this.glossaryRepo.find({
       relations: ['parent', 'children'],
@@ -75,6 +108,24 @@ export class GlossaryService {
       throw new NotFoundException('Glossary term not found.');
     }
 
+    if (dto.term && dto.term !== glossary.term) {
+      const existing = await this.glossaryRepo.findOne({ where: { term: dto.term, id: Not(id) } });
+      if (existing) {
+        throw new BadRequestException(`The term '${dto.term}' is already in use.`);
+      }
+    }
+
+    let nextParentId = glossary.parent_id;
+    if (dto.parent_id !== undefined) {
+      if (dto.parent_id === null || `${dto.parent_id}`.trim() === '' || Number(dto.parent_id) === 0) {
+        nextParentId = null;
+      } else {
+        const pId = Number(dto.parent_id);
+        await this.validateNoCycle(id, pId);
+        nextParentId = pId;
+      }
+    }
+
     let imageUrl = glossary.image_url;
     if (file) {
       if (glossary.image_url) await this.deleteUploadedFile(glossary.image_url);
@@ -84,30 +135,7 @@ export class GlossaryService {
       imageUrl = null;
     }
 
-    if (dto.term && dto.term !== glossary.term) {
-      const existing = await this.glossaryRepo.findOne({ where: { term: dto.term, id: Not(id) } });
-      if (existing) {
-        if (file) await this.deleteUploadedFile(imageUrl);
-        throw new BadRequestException(`The term '${dto.term}' is already in use.`);
-      }
-    }
-
-    if (dto.parent_id !== undefined) {
-      if (dto.parent_id === null || `${dto.parent_id}`.trim() === '' || Number(dto.parent_id) === 0) {
-        glossary.parent_id = null;
-      } else {
-        const pId = Number(dto.parent_id);
-        if (pId === id) {
-          throw new BadRequestException('Một thuật ngữ không thể làm cha của chính nó.');
-        }
-        const parentTerm = await this.glossaryRepo.findOne({ where: { id: pId } });
-        if (!parentTerm) {
-          throw new BadRequestException('Thuật ngữ cha được chọn không tồn tại.');
-        }
-        glossary.parent_id = pId;
-      }
-    }
-
+    glossary.parent_id = nextParentId;
     glossary.term = dto.term !== undefined ? dto.term : glossary.term;
     glossary.definition = dto.definition !== undefined ? dto.definition : glossary.definition;
     glossary.level = dto.level !== undefined ? (dto.level === 'advanced' ? 'advanced' : 'basic') : glossary.level;

@@ -416,8 +416,8 @@ export default function CharacterSelectGrid({
                   </p>
                   <p className="figma-showcase-difficulty">
                     <strong>Độ khó :</strong>{' '}
-                    {'★'.repeat(currentChar?.difficulty || 1)}
-                    {'☆'.repeat(Math.max(0, 5 - (currentChar?.difficulty || 1)))}
+                    {'★'.repeat(Math.min(6, Math.max(1, currentChar?.difficulty || 1)))}
+                    {'☆'.repeat(Math.max(0, 6 - Math.min(6, Math.max(1, currentChar?.difficulty || 1))))}
                   </p>
                 </div>
 
@@ -528,17 +528,18 @@ export default function CharacterSelectGrid({
 
               <div className="figma-char-edit-row">
                 <div className="figma-char-edit-field">
-                  <label htmlFor="edit-char-difficulty">Độ khó (1 - 5):</label>
+                  <label htmlFor="edit-char-difficulty">Độ khó (1 - 6):</label>
                   <select
                     id="edit-char-difficulty"
                     value={charForm.difficulty}
                     onChange={(e) => setCharForm({ ...charForm, difficulty: Number(e.target.value) })}
                   >
-                    <option value={1}>★☆☆☆☆ (1/5 - Dễ / Căn bản)</option>
-                    <option value={2}>★★☆☆☆ (2/5 - Khá dễ)</option>
-                    <option value={3}>★★★☆☆ (3/5 - Trung bình)</option>
-                    <option value={4}>★★★★☆ (4/5 - Khó)</option>
-                    <option value={5}>★★★★★ (5/5 - Rất khó / Chuyên sâu)</option>
+                    <option value={1}>★☆☆☆☆☆ (1/6 - Rất dễ / Nhập môn)</option>
+                    <option value={2}>★★☆☆☆☆ (2/6 - Dễ)</option>
+                    <option value={3}>★★★☆☆☆ (3/6 - Trung bình)</option>
+                    <option value={4}>★★★★☆☆ (4/6 - Khá khó)</option>
+                    <option value={5}>★★★★★☆ (5/6 - Khó / Kỹ thuật cao)</option>
+                    <option value={6}>★★★★★★ (6/6 - Cực khó / Chuyên sâu)</option>
                   </select>
                 </div>
 

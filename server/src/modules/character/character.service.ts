@@ -7,6 +7,7 @@ import { Character } from '../../entities/character.entity';
 import { CharacterMove } from '../../entities/character-move.entity';
 import { CharacterBaseStat } from '../../entities/character-base-stat.entity';
 import { CreateCharacterDto } from './dto/create-character.dto';
+import { UpdateCharacterDto } from './dto/update-character.dto';
 import { CreateMoveDto } from './dto/create-move.dto';
 import { UpsertBaseStatsDto } from './dto/create-move.dto';
 import { StorageService } from '../storage/storage.service';
@@ -62,7 +63,7 @@ export class CharacterService {
     }
   }
 
-  async updateCharacter(id: number, dto: Partial<CreateCharacterDto>, file?: Express.Multer.File) {
+  async updateCharacter(id: number, dto: UpdateCharacterDto, file?: Express.Multer.File) {
     const character = await this.characterRepo.findOne({ where: { id } });
     if (!character) {
       throw new NotFoundException('Character not found.');
