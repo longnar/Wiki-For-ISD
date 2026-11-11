@@ -231,9 +231,23 @@ export default function CharacterSelectGrid({
     setIsEditingChar(true);
   };
 
+  // Đóng modal sửa; không cho đóng khi đang lưu để tránh mở lại sửa tiếp trong lúc request cũ chưa xong
+  const closeEditChar = () => {
+    if (isSavingChar) return;
+    setIsEditingChar(false);
+  };
+
   // Lưu thông tin nhân vật đã sửa (Admin)
   const handleSaveChar = async (e) => {
     e.preventDefault();
+    if (isSavingChar) return;
+    const charId = Number(currentChar?.id);
+    if (!Number.isInteger(charId) || charId <= 0) {
+      // Trước đây trường hợp này chỉ sửa trên giao diện rồi đóng modal mà không lưu gì -> báo rõ cho admin
+      alert('Không xác định được nhân vật trong cơ sở dữ liệu nên chưa thể lưu. Hãy tải lại trang rồi thử lại.');
+      return;
+    }
+
     setIsSavingChar(true);
     try {
       const form = new FormData();
@@ -241,13 +255,8 @@ export default function CharacterSelectGrid({
         if (val !== undefined && val !== null) form.append(key, val);
       });
 
-      let updated = null;
-      if (currentChar?.id && typeof currentChar.id === 'number') {
-        const res = await characterApi.update(currentChar.id, form);
-        updated = res.character || { ...currentChar, ...charForm };
-      } else {
-        updated = { ...currentChar, ...charForm };
-      }
+      const res = await characterApi.update(charId, form);
+      const updated = res.character || { ...currentChar, ...charForm };
 
       // Cập nhật ngay vào activeChar và danh sách cục bộ charList
       setActiveChar(updated);
@@ -409,7 +418,10 @@ export default function CharacterSelectGrid({
                   </p>
                   <p>
                     <strong>Mô tả :</strong>{' '}
-                    {currentChar?.description || 'Bậc thầy chiến đấu của Hololive!'}
+                    {/* pre-line: giữ các dòng/đoạn admin đã xuống dòng trong mô tả */}
+                    <span style={{ whiteSpace: 'pre-line' }}>
+                      {currentChar?.description || 'Bậc thầy chiến đấu của Hololive!'}
+                    </span>
                   </p>
                   <p>
                     <strong>Phân loại :</strong> {currentChar?.type || 'well-rounded (shoto)'}
@@ -475,14 +487,15 @@ export default function CharacterSelectGrid({
 
       {/* Modal chỉnh sửa thông tin nhân vật (Admin) */}
       {isEditingChar && (
-        <div className="figma-char-edit-backdrop" onClick={() => setIsEditingChar(false)}>
+        <div className="figma-char-edit-backdrop" onClick={closeEditChar}>
           <div className="figma-char-edit-card" onClick={(e) => e.stopPropagation()}>
             <div className="figma-char-edit-header">
               <h3>Sửa thông tin: {currentChar?.name}</h3>
               <button
                 type="button"
                 className="figma-char-edit-close-btn"
-                onClick={() => setIsEditingChar(false)}
+                onClick={closeEditChar}
+                disabled={isSavingChar}
                 title="Đóng"
               >
                 ✕
@@ -572,7 +585,8 @@ export default function CharacterSelectGrid({
                 <button
                   type="button"
                   className="figma-btn-cancel-char"
-                  onClick={() => setIsEditingChar(false)}
+                  onClick={closeEditChar}
+                  disabled={isSavingChar}
                 >
                   Hủy
                 </button>

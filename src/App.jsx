@@ -90,8 +90,12 @@ function App() {
     }
   }, [])
 
+  // Carousel chỉ chạy ở trang chủ: mỗi thẻ là file base64 4-7MB, chạy ngầm ở trang khác
+  // sẽ tải ~118MB và chiếm băng thông của các request lưu dữ liệu
+  const isHomePage = activePage === 'home'
+
   useEffect(() => {
-    if (characterCards.length === 0) {
+    if (characterCards.length === 0 || !isHomePage) {
       return undefined
     }
 
@@ -109,10 +113,10 @@ function App() {
     }, 4000)
 
     return () => window.clearInterval(intervalId)
-  }, [characterCards.length])
+  }, [characterCards.length, isHomePage])
 
   useEffect(() => {
-    if (characterCards.length === 0) {
+    if (characterCards.length === 0 || !isHomePage) {
       return undefined
     }
 
@@ -146,7 +150,7 @@ function App() {
     return () => {
       isMounted = false
     }
-  }, [activeCard, characterCards])
+  }, [activeCard, characterCards, isHomePage])
 
   useEffect(() => () => {
     Object.values(cardUrlsRef.current).forEach((objectUrl) => URL.revokeObjectURL(objectUrl))
