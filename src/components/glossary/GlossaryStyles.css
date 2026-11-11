@@ -341,6 +341,7 @@
   flex-shrink: 0;
 }
 
+.figma-glossary-btn-add-child,
 .figma-glossary-btn-edit,
 .figma-glossary-btn-delete {
   padding: 8px 16px;
@@ -350,6 +351,20 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+}
+
+.figma-glossary-btn-add-child {
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.figma-glossary-btn-add-child:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
 }
 
 .figma-glossary-btn-edit {
@@ -623,7 +638,7 @@
 }
 
 /* =========================================================
-   CHILD GLOSSARY & SMART ACCORDION (PHƯƠNG ÁN A)
+   CHILD GLOSSARY ĐA CẤP & SMART RECURSIVE ACCORDION
    ========================================================= */
 
 .figma-glossary-accordion-group {
@@ -632,11 +647,68 @@
   gap: 4px;
 }
 
+.figma-glossary-card,
+.figma-glossary-node-row {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: #e2e8f0;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.figma-glossary-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateX(2px);
+}
+
+.figma-glossary-card.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25);
+}
+
+.figma-glossary-node-select-btn {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.figma-glossary-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: inherit;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 .figma-glossary-accordion-meta {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 .figma-glossary-child-count {
@@ -650,33 +722,56 @@
 }
 
 .figma-glossary-arrow-toggle {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-  transition: transform 0.2s ease, color 0.2s ease;
+  padding: 2px 6px;
+  line-height: 1.1;
+  transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease;
   transform: rotate(-90deg);
+}
+
+.figma-glossary-arrow-toggle:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #ffffff;
 }
 
 .figma-glossary-arrow-toggle.open {
   transform: rotate(0deg);
   color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
 }
 
 .figma-glossary-children-container {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding-left: 14px;
+  padding-left: 12px;
   border-left: 2px solid rgba(56, 189, 248, 0.4);
   box-shadow: -2px 0 8px -1px rgba(56, 189, 248, 0.25);
-  margin-left: 16px;
-  margin-top: 4px;
-  margin-bottom: 6px;
+  margin-left: 12px;
+  margin-top: 3px;
+  margin-bottom: 5px;
   animation: figmaAccordionSlideDown 0.2s ease-out;
+}
+
+/* Màu nhánh & thụt lề kiểm soát cho cấp 2 (nhánh cháu) và cấp 3+ */
+.figma-glossary-children-container.depth-container-2 {
+  padding-left: 10px;
+  margin-left: 10px;
+  border-left-color: rgba(167, 139, 250, 0.5);
+  box-shadow: -2px 0 8px -1px rgba(167, 139, 250, 0.22);
+}
+
+.figma-glossary-children-container.depth-container-3,
+.figma-glossary-children-container.depth-container-4 {
+  padding-left: 8px;
+  margin-left: 8px;
+  border-left-color: rgba(52, 211, 153, 0.5);
+  box-shadow: -2px 0 8px -1px rgba(52, 211, 153, 0.22);
 }
 
 @keyframes figmaAccordionSlideDown {
@@ -691,12 +786,25 @@
 }
 
 .figma-glossary-child-card {
-  padding: 7px 12px;
+  padding: 7px 10px;
   min-height: 36px;
   background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+}
+
+.depth-2 .figma-glossary-child-card,
+.depth-3 .figma-glossary-child-card,
+.depth-4 .figma-glossary-child-card {
+  padding: 6px 9px;
+  min-height: 32px;
+  background: rgba(15, 23, 42, 0.68);
+}
+
+.depth-2 .figma-glossary-card-title,
+.depth-3 .figma-glossary-card-title,
+.depth-4 .figma-glossary-card-title {
+  font-size: 13px;
 }
 
 .figma-glossary-child-card:hover {
@@ -718,9 +826,19 @@
   margin-right: 6px;
   font-size: 13px;
   display: inline-block;
+  flex-shrink: 0;
 }
 
-/* Đường dẫn phân cấp (Breadcrumb Navigation Bar) */
+.depth-2 .figma-glossary-child-bullet {
+  color: #a78bfa;
+}
+
+.depth-3 .figma-glossary-child-bullet,
+.depth-4 .figma-glossary-child-bullet {
+  color: #34d399;
+}
+
+/* Đường dẫn phân cấp (Breadcrumb Navigation Bar đa cấp) */
 .figma-glossary-hierarchy-nav {
   display: inline-flex;
   align-items: center;
@@ -733,6 +851,12 @@
   margin-bottom: 8px;
   align-self: flex-start;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.figma-glossary-breadcrumb-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .figma-glossary-breadcrumb-item.parent {
@@ -922,14 +1046,32 @@
 .figma-glossary-subterm-card-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
   font-weight: 700;
   color: #38bdf8;
-  transition: transform 0.2s ease;
 }
 
-.figma-glossary-subterm-mini-card:hover .figma-glossary-subterm-card-footer {
+.figma-glossary-subterm-nested-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.figma-glossary-subterm-card-link {
+  margin-left: auto;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.figma-glossary-subterm-mini-card:hover .figma-glossary-subterm-card-link {
   transform: translateX(3px);
   color: #7dd3fc;
 }

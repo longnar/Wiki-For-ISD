@@ -742,7 +742,7 @@ function App() {
         <form className="selection-add-description data-form" onSubmit={handleCharacterSubmit}>
           <input value={characterForm.name} onChange={(event) => setCharacterForm({ ...characterForm, name: event.target.value })} placeholder="Tên nhân vật" required />
           <input value={characterForm.type} onChange={(event) => setCharacterForm({ ...characterForm, type: event.target.value })} placeholder="Loại nhân vật" />
-          <input type="number" min="1" max="5" value={characterForm.difficulty} onChange={(event) => setCharacterForm({ ...characterForm, difficulty: event.target.value })} placeholder="Độ khó" />
+          <input type="number" min="1" max="6" value={characterForm.difficulty} onChange={(event) => setCharacterForm({ ...characterForm, difficulty: event.target.value })} placeholder="Độ khó (1-6)" />
           <textarea value={characterForm.description} onChange={(event) => setCharacterForm({ ...characterForm, description: event.target.value })} aria-label="Thông tin mô tả" placeholder="Nhập mô tả nhân vật" />
           <div className="selection-add-actions">
             <button type="submit" className="selection-add-action selection-add-save">Lưu</button>

@@ -15,6 +15,67 @@ function isDirectVideoUrl(url) {
   return /\.(mp4|webm|ogg)($|\?)/i.test(url);
 }
 
+function getAncestorIds(termId, termMap) {
+  const ancestors = [];
+  const visited = new Set([termId]);
+  let current = termMap.get(termId);
+  let steps = 0;
+
+  while (current && current.parent_id && steps < 100) {
+    if (visited.has(current.parent_id)) break;
+    visited.add(current.parent_id);
+    ancestors.push(current.parent_id);
+    current = termMap.get(current.parent_id);
+    steps++;
+  }
+  return ancestors;
+}
+
+function getAncestorChain(termId, termMap) {
+  const chain = [];
+  const visited = new Set([termId]);
+  let current = termMap.get(termId);
+  let steps = 0;
+
+  while (current && current.parent_id && steps < 100) {
+    if (visited.has(current.parent_id)) break;
+    visited.add(current.parent_id);
+    const parent = termMap.get(current.parent_id);
+    if (!parent) break;
+    chain.unshift(parent);
+    current = parent;
+    steps++;
+  }
+  return chain;
+}
+
+function getDescendantIds(rootId, allItems) {
+  const descendants = new Set([rootId]);
+  const childrenLookup = new Map();
+
+  for (const item of allItems) {
+    if (item.parent_id) {
+      if (!childrenLookup.has(item.parent_id)) {
+        childrenLookup.set(item.parent_id, []);
+      }
+      childrenLookup.get(item.parent_id).push(item.id);
+    }
+  }
+
+  const queue = [rootId];
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    const kids = childrenLookup.get(currentId) || [];
+    for (const kidId of kids) {
+      if (!descendants.has(kidId)) {
+        descendants.add(kidId);
+        queue.push(kidId);
+      }
+    }
+  }
+  return descendants;
+}
+
 export default function GlossaryScreen({
   level = 'basic', // 'basic' | 'advanced'
   isAuthenticated = false,
@@ -67,17 +128,36 @@ export default function GlossaryScreen({
     fetchGlossaries();
   }, []);
 
-  // Cập nhật khi initialTermId từ ngoài truyền vào
+  // Map toàn bộ thuật ngữ theo ID để tra cứu chuỗi tổ tiên đa cấp nhanh chóng
+  const glossariesById = useMemo(() => {
+    const map = new Map();
+    for (const g of glossaries) {
+      map.set(g.id, g);
+    }
+    return map;
+  }, [glossaries]);
+
+  // Đếm tổng số nhánh con trực tiếp cho từng thuật ngữ (dùng hiển thị huy hiệu trên Mini Card)
+  const directChildrenCountMap = useMemo(() => {
+    const counts = new Map();
+    for (const g of glossaries) {
+      if (g.parent_id) {
+        counts.set(g.parent_id, (counts.get(g.parent_id) || 0) + 1);
+      }
+    }
+    return counts;
+  }, [glossaries]);
+
+  // Cập nhật khi initialTermId từ ngoài truyền vào (tự động bung toàn bộ chuỗi tổ tiên)
   useEffect(() => {
     if (initialTermId) {
       setActiveTermId(initialTermId);
-      // Tìm xem term này có parent không để tự động mở accordion
-      const found = glossaries.find((g) => g.id === initialTermId);
-      if (found && found.parent_id) {
-        setExpandedParentIds((prev) => new Set([...prev, found.parent_id]));
+      const ancestors = getAncestorIds(initialTermId, glossariesById);
+      if (ancestors.length > 0) {
+        setExpandedParentIds((prev) => new Set([...prev, ...ancestors]));
       }
     }
-  }, [initialTermId, glossaries]);
+  }, [initialTermId, glossariesById]);
 
   // Reset form & active khi chuyển level
   useEffect(() => {
@@ -88,7 +168,7 @@ export default function GlossaryScreen({
     }
   }, [level]);
 
-  // Lọc danh sách thuật ngữ theo trang hiện tại và từ khóa tìm kiếm
+  // Lọc danh sách thuật ngữ theo trang hiện tại
   const currentLevelTerms = useMemo(() => {
     return glossaries.filter((g) => {
       const itemLevel = (g.level || 'basic').toLowerCase();
@@ -99,68 +179,95 @@ export default function GlossaryScreen({
     });
   }, [glossaries, isAdvanced]);
 
-  // Cấu trúc phân cấp cha - con (Smart Accordion)
-  const { rootTerms, childrenMap } = useMemo(() => {
+  // Cấu trúc cây phân cấp đa tầng (Smart Recursive Accordion)
+  const { rootTerms, childrenMap, searchExpandIds } = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    const childrenMap = new Map();
     const termMap = new Map();
+    const fullChildrenMap = new Map();
 
     for (const term of currentLevelTerms) {
       termMap.set(term.id, term);
     }
 
-    // Nhóm các con theo parent_id
+    // Nhóm các con trực tiếp theo parent_id ở mọi tầng
     for (const term of currentLevelTerms) {
       if (term.parent_id && termMap.has(term.parent_id)) {
-        if (!childrenMap.has(term.parent_id)) {
-          childrenMap.set(term.parent_id, []);
+        if (!fullChildrenMap.has(term.parent_id)) {
+          fullChildrenMap.set(term.parent_id, []);
         }
-        childrenMap.get(term.parent_id).push(term);
+        fullChildrenMap.get(term.parent_id).push(term);
       }
     }
 
-    // Lọc danh sách gốc (Root terms)
-    let roots = currentLevelTerms.filter((term) => !term.parent_id || !termMap.has(term.parent_id));
+    const allRoots = currentLevelTerms.filter(
+      (term) => !term.parent_id || !termMap.has(term.parent_id)
+    );
 
-    // Nếu có tìm kiếm: lọc các root khớp tìm kiếm HOẶC có con khớp tìm kiếm
-    if (q) {
-      roots = roots.filter((r) => {
-        const rootMatch =
-          (r.term && r.term.toLowerCase().includes(q)) ||
-          (r.definition && r.definition.toLowerCase().includes(q));
-        const children = childrenMap.get(r.id) || [];
-        const hasChildMatch = children.some(
-          (c) =>
-            (c.term && c.term.toLowerCase().includes(q)) ||
-            (c.definition && c.definition.toLowerCase().includes(q))
-        );
-        return rootMatch || hasChildMatch;
-      });
+    if (!q) {
+      return {
+        rootTerms: allRoots,
+        childrenMap: fullChildrenMap,
+        searchExpandIds: new Set(),
+      };
     }
 
-    return { rootTerms: roots, childrenMap };
+    const isSelfMatch = (term) =>
+      (term.term && term.term.toLowerCase().includes(q)) ||
+      (term.definition && term.definition.toLowerCase().includes(q));
+
+    const visibleIds = new Set();
+    const autoExpand = new Set();
+
+    const evaluateSubtree = (node, visited = new Set()) => {
+      if (!node || visited.has(node.id)) return false;
+      const nextVisited = new Set(visited);
+      nextVisited.add(node.id);
+
+      const selfMatched = isSelfMatch(node);
+      const kids = fullChildrenMap.get(node.id) || [];
+      let childMatched = false;
+
+      for (const kid of kids) {
+        if (evaluateSubtree(kid, nextVisited)) {
+          childMatched = true;
+        }
+      }
+
+      if (selfMatched || childMatched) {
+        visibleIds.add(node.id);
+        if (childMatched) {
+          autoExpand.add(node.id);
+        }
+        return true;
+      }
+      return false;
+    };
+
+    for (const root of allRoots) {
+      evaluateSubtree(root);
+    }
+
+    const filteredChildrenMap = new Map();
+    for (const [parentId, kids] of fullChildrenMap.entries()) {
+      const visibleKids = kids.filter((k) => visibleIds.has(k.id));
+      if (visibleKids.length > 0) {
+        filteredChildrenMap.set(parentId, visibleKids);
+      }
+    }
+
+    return {
+      rootTerms: allRoots.filter((r) => visibleIds.has(r.id)),
+      childrenMap: filteredChildrenMap,
+      searchExpandIds: autoExpand,
+    };
   }, [currentLevelTerms, searchQuery]);
 
-  // Tự động mở rộng accordion khi có từ khóa tìm kiếm
+  // Tự động mở rộng chuỗi cha-con khi có từ khóa tìm kiếm ở mọi độ sâu
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const newExpanded = new Set();
-      for (const [parentId, children] of childrenMap.entries()) {
-        const hasMatch = children.some(
-          (c) =>
-            (c.term && c.term.toLowerCase().includes(q)) ||
-            (c.definition && c.definition.toLowerCase().includes(q))
-        );
-        if (hasMatch) {
-          newExpanded.add(parentId);
-        }
-      }
-      if (newExpanded.size > 0) {
-        setExpandedParentIds((prev) => new Set([...prev, ...newExpanded]));
-      }
+    if (searchQuery.trim() && searchExpandIds.size > 0) {
+      setExpandedParentIds((prev) => new Set([...prev, ...searchExpandIds]));
     }
-  }, [searchQuery, childrenMap]);
+  }, [searchQuery, searchExpandIds]);
 
   // Thuật ngữ đang được chọn
   const activeTerm = useMemo(() => {
@@ -168,45 +275,91 @@ export default function GlossaryScreen({
       const found = currentLevelTerms.find((t) => t.id === activeTermId);
       if (found) return found;
     }
-    // Mặc định chọn root đầu tiên
     return rootTerms[0] || currentLevelTerms[0] || null;
   }, [currentLevelTerms, rootTerms, activeTermId]);
 
-  // Thuật ngữ cha của activeTerm (nếu activeTerm là con)
-  const activeParentTerm = useMemo(() => {
-    if (!activeTerm || !activeTerm.parent_id) return null;
-    return glossaries.find((g) => g.id === activeTerm.parent_id) || null;
-  }, [activeTerm, glossaries]);
+  // Chuỗi tổ tiên đầy đủ của activeTerm (từ Gốc -> ... -> Cha trực tiếp) để vẽ Breadcrumb đa cấp
+  const activeAncestorChain = useMemo(() => {
+    if (!activeTerm) return [];
+    return getAncestorChain(activeTerm.id, glossariesById);
+  }, [activeTerm, glossariesById]);
 
-  // Danh sách các con của activeTerm (nếu activeTerm là cha)
+  // Danh sách các con trực tiếp của activeTerm
   const activeTermChildren = useMemo(() => {
     if (!activeTerm) return [];
     return glossaries.filter((g) => g.parent_id === activeTerm.id);
   }, [activeTerm, glossaries]);
 
-  // Danh sách ứng viên có thể làm cha trong Form
+  // Danh sách ứng viên có thể làm cha trong Form (loại trừ chính nó + toàn bộ con/cháu để chống vòng lặp)
   const potentialParents = useMemo(() => {
-    return glossaries.filter((g) => {
-      if (formData.id && g.id === formData.id) return false;
-      // Không cho chọn một thuật ngữ con của chính nó làm cha
-      if (formData.id && g.parent_id === formData.id) return false;
-      return true;
-    });
-  }, [glossaries, formData.id]);
+    const targetLevel = (formData.level || level).toLowerCase();
+    const excludedIds = formData.id ? getDescendantIds(formData.id, glossaries) : new Set();
 
-  // Đổi mục chọn
-  const handleSelectTerm = (term) => {
+    const sameLevelItems = glossaries.filter((g) => {
+      if (excludedIds.has(g.id)) return false;
+      const gLevel = (g.level || 'basic').toLowerCase();
+      return gLevel === targetLevel || (targetLevel === 'advanced' && gLevel === 'advance');
+    });
+
+    const itemMap = new Map(sameLevelItems.map((i) => [i.id, i]));
+    const childMap = new Map();
+    const roots = [];
+
+    for (const item of sameLevelItems) {
+      if (item.parent_id && itemMap.has(item.parent_id)) {
+        if (!childMap.has(item.parent_id)) childMap.set(item.parent_id, []);
+        childMap.get(item.parent_id).push(item);
+      } else {
+        roots.push(item);
+      }
+    }
+
+    const flattened = [];
+    const visited = new Set();
+    const traverse = (node, depth = 0) => {
+      if (visited.has(node.id)) return;
+      visited.add(node.id);
+      const indent = depth > 0 ? `${'\u00A0\u00A0'.repeat(depth)}↳ ` : '';
+      flattened.push({
+        ...node,
+        depth,
+        displayLabel: `${indent}${node.term}`,
+      });
+      const kids = childMap.get(node.id) || [];
+      for (const kid of kids) {
+        traverse(kid, depth + 1);
+      }
+    };
+
+    for (const root of roots) {
+      traverse(root, 0);
+    }
+
+    return flattened;
+  }, [glossaries, formData.id, formData.level, level]);
+
+  // Đổi mục chọn (cập nhật chi tiết + mở chuỗi tổ tiên; nếu bấm vào node có con thì mở trực tiếp cấp con của nó)
+  const handleSelectTerm = (term, expandSelf = false) => {
     setActiveTermId(term.id);
     setIsEditing(false);
     setIsCreating(false);
 
-    // Nếu chọn con, tự động mở cha
-    if (term.parent_id) {
-      setExpandedParentIds((prev) => new Set([...prev, term.parent_id]));
+    const ancestors = getAncestorIds(term.id, glossariesById);
+    if (ancestors.length > 0 || expandSelf) {
+      setExpandedParentIds((prev) => {
+        const next = new Set(prev);
+        for (const ancId of ancestors) {
+          next.add(ancId);
+        }
+        if (expandSelf) {
+          next.add(term.id);
+        }
+        return next;
+      });
     }
   };
 
-  // Toggle mở / đóng accordion
+  // Toggle mở / đóng accordion cho riêng một nhánh
   const handleToggleAccordion = (parentId, e) => {
     if (e) e.stopPropagation();
     setExpandedParentIds((prev) => {
@@ -220,8 +373,8 @@ export default function GlossaryScreen({
     });
   };
 
-  // Điều hướng khi click vào cross-link trong bài viết
-  const handleSelectCrossLink = (targetTerm) => {
+  // Điều hướng khi click vào cross-link, breadcrumb hoặc Mini Card
+  const handleSelectCrossLink = (targetTerm, expandSelf = false) => {
     if (!targetTerm) return;
     const targetIsAdvanced = (targetTerm.level || 'basic').toLowerCase() === 'advanced';
 
@@ -230,9 +383,11 @@ export default function GlossaryScreen({
         onSwitchPage(targetTerm.id);
       }
     } else {
-      handleSelectTerm(targetTerm);
-      const el = document.getElementById(`glossary-item-${targetTerm.id}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      handleSelectTerm(targetTerm, expandSelf);
+      window.requestAnimationFrame(() => {
+        const el = document.getElementById(`glossary-item-${targetTerm.id}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
     }
   };
 
@@ -254,7 +409,7 @@ export default function GlossaryScreen({
     setIsCreating(false);
   };
 
-  // Mở form tạo mới (Admin)
+  // Mở form tạo mới (Admin) - hỗ trợ truyền sẵn defaultParentId để tạo nhanh nhánh con
   const handleStartCreate = (defaultParentId = null) => {
     setFormData({
       id: null,
@@ -304,6 +459,11 @@ export default function GlossaryScreen({
 
       await fetchGlossaries();
       if (savedId) setActiveTermId(savedId);
+      if (formData.parent_id) {
+        const pId = Number(formData.parent_id);
+        const ancestors = getAncestorIds(pId, glossariesById);
+        setExpandedParentIds((prev) => new Set([...prev, pId, ...ancestors]));
+      }
       setIsEditing(false);
       setIsCreating(false);
     } catch {
@@ -325,6 +485,11 @@ export default function GlossaryScreen({
         return prev.map((t) => (t.id === formData.id ? { ...t, ...updatedItem } : t));
       });
 
+      if (updatedItem.parent_id) {
+        const pId = Number(updatedItem.parent_id);
+        const ancestors = getAncestorIds(pId, glossariesById);
+        setExpandedParentIds((prev) => new Set([...prev, pId, ...ancestors]));
+      }
       setActiveTermId(updatedItem.id);
       setIsEditing(false);
       setIsCreating(false);
@@ -350,6 +515,80 @@ export default function GlossaryScreen({
   const handleCancelForm = () => {
     setIsEditing(false);
     setIsCreating(false);
+  };
+
+  // Hàm đệ quy render cây thuật ngữ đa cấp cho Sidebar (Smart Recursive Accordion)
+  const renderTreeNodes = (nodes, depth = 0, ancestryGuard = new Set()) => {
+    return nodes.map((node) => {
+      if (ancestryGuard.has(node.id)) return null;
+      const nextGuard = new Set(ancestryGuard);
+      nextGuard.add(node.id);
+
+      const children = childrenMap.get(node.id) || [];
+      const hasChildren = children.length > 0;
+      const isExpanded = expandedParentIds.has(node.id);
+      const isSelected = activeTerm?.id === node.id;
+      const depthTier = Math.min(depth, 4);
+
+      return (
+        <div
+          key={node.id}
+          className={`figma-glossary-accordion-group depth-${depthTier}`}
+        >
+          <div
+            id={`glossary-item-${node.id}`}
+            className={`figma-glossary-card figma-glossary-node-row ${
+              depth > 0 ? 'figma-glossary-child-card' : ''
+            } ${isSelected ? 'active' : ''} ${hasChildren ? 'is-parent' : ''}`}
+          >
+            <button
+              type="button"
+              role="listitem"
+              className="figma-glossary-node-select-btn"
+              onClick={() => handleSelectTerm(node, true)}
+              title={node.term}
+            >
+              {depth > 0 && (
+                <span className="figma-glossary-child-bullet" aria-hidden="true">
+                  ↳
+                </span>
+              )}
+              <span className="figma-glossary-card-title">{node.term}</span>
+            </button>
+
+            {hasChildren && (
+              <div className="figma-glossary-accordion-meta">
+                <span
+                  className="figma-glossary-child-count"
+                  title={`Có ${children.length} nhánh con trực tiếp`}
+                >
+                  ({children.length})
+                </span>
+                <button
+                  type="button"
+                  className={`figma-glossary-arrow-toggle ${isExpanded ? 'open' : ''}`}
+                  onClick={(e) => handleToggleAccordion(node.id, e)}
+                  title={isExpanded ? 'Thu gọn nhánh con' : 'Mở rộng nhánh con'}
+                  aria-label={isExpanded ? `Thu gọn ${node.term}` : `Mở rộng ${node.term}`}
+                  aria-expanded={isExpanded}
+                >
+                  ▾
+                </button>
+              </div>
+            )}
+          </div>
+
+          {hasChildren && isExpanded && (
+            <div
+              className={`figma-glossary-children-container depth-container-${Math.min(depth + 1, 4)}`}
+              data-depth={depth + 1}
+            >
+              {renderTreeNodes(children, depth + 1, nextGuard)}
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   return (
@@ -424,7 +663,7 @@ export default function GlossaryScreen({
             )}
           </div>
 
-          {/* Danh sách cuộn dạng Smart Accordion */}
+          {/* Danh sách cuộn dạng Cây Đệ Quy Đa Cấp (Smart Recursive Accordion) */}
           <div className="figma-glossary-list" role="list">
             {isLoading ? (
               <div className="figma-glossary-empty">Đang tải thuật ngữ...</div>
@@ -433,72 +672,7 @@ export default function GlossaryScreen({
                 {searchQuery ? 'Không tìm thấy thuật ngữ phù hợp' : 'Chưa có thuật ngữ nào ở mục này'}
               </div>
             ) : (
-              rootTerms.map((root) => {
-                const children = childrenMap.get(root.id) || [];
-                const hasChildren = children.length > 0;
-                const isExpanded = expandedParentIds.has(root.id);
-                const isSelected = activeTerm?.id === root.id;
-
-                return (
-                  <div key={root.id} className="figma-glossary-accordion-group">
-                    {/* Thẻ cha (Root Term Card) */}
-                    <button
-                      id={`glossary-item-${root.id}`}
-                      type="button"
-                      role="listitem"
-                      className={`figma-glossary-card ${isSelected ? 'active' : ''} ${hasChildren ? 'is-parent' : ''}`}
-                      onClick={() => {
-                        handleSelectTerm(root);
-                        if (hasChildren && !isExpanded) {
-                          handleToggleAccordion(root.id);
-                        }
-                      }}
-                    >
-                      <div className="figma-glossary-card-header">
-                        <span className="figma-glossary-card-title">{root.term}</span>
-                        {hasChildren && (
-                          <div className="figma-glossary-accordion-meta">
-                            <span className="figma-glossary-child-count">({children.length})</span>
-                            <button
-                              type="button"
-                              className={`figma-glossary-arrow-toggle ${isExpanded ? 'open' : ''}`}
-                              onClick={(e) => handleToggleAccordion(root.id, e)}
-                              title={isExpanded ? 'Thu gọn' : 'Mở rộng'}
-                              aria-label={isExpanded ? 'Thu gọn' : 'Mở rộng'}
-                            >
-                              ▾
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Danh sách các con (Children Sub-List) */}
-                    {hasChildren && isExpanded && (
-                      <div className="figma-glossary-children-container">
-                        {children.map((child) => {
-                          const isChildSelected = activeTerm?.id === child.id;
-                          return (
-                            <button
-                              key={child.id}
-                              id={`glossary-item-${child.id}`}
-                              type="button"
-                              role="listitem"
-                              className={`figma-glossary-card figma-glossary-child-card ${isChildSelected ? 'active' : ''}`}
-                              onClick={() => handleSelectTerm(child)}
-                            >
-                              <div className="figma-glossary-card-header">
-                                <span className="figma-glossary-child-bullet">↳</span>
-                                <span className="figma-glossary-card-title">{child.term}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+              renderTreeNodes(rootTerms, 0)
             )}
           </div>
         </aside>
@@ -546,7 +720,7 @@ export default function GlossaryScreen({
                     <option value="">-- Không có (Thuật ngữ độc lập / Gốc) --</option>
                     {potentialParents.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.term} ({p.level === 'advanced' ? 'Advanced' : 'Basic'})
+                        {p.displayLabel}
                       </option>
                     ))}
                   </select>
@@ -648,20 +822,26 @@ export default function GlossaryScreen({
               <>
                 <header className="figma-glossary-article-header">
                   <div className="figma-glossary-article-title-wrap">
-                    {/* Breadcrumb phân cấp game đối kháng khi đang xem thuật ngữ con */}
-                    {activeParentTerm && (
+                    {/* Breadcrumb phân cấp đa tầng khi đang xem thuật ngữ con/cháu */}
+                    {activeAncestorChain.length > 0 && (
                       <nav className="figma-glossary-hierarchy-nav" aria-label="Đường dẫn phân cấp thuật ngữ">
-                        <button
-                          type="button"
-                          className="figma-glossary-breadcrumb-item parent"
-                          onClick={() => handleSelectCrossLink(activeParentTerm)}
-                          title={`Xem thuật ngữ cha: ${activeParentTerm.term}`}
-                        >
-                          <span className="figma-glossary-breadcrumb-icon">📁</span>
-                          <span className="figma-glossary-breadcrumb-parent-label">Thuộc nhóm:</span>
-                          <strong className="figma-glossary-breadcrumb-parent-name">{activeParentTerm.term}</strong>
-                        </button>
-                        <span className="figma-glossary-breadcrumb-separator" aria-hidden="true">➔</span>
+                        {activeAncestorChain.map((anc, idx) => (
+                          <span key={anc.id} className="figma-glossary-breadcrumb-segment">
+                            <button
+                              type="button"
+                              className="figma-glossary-breadcrumb-item parent"
+                              onClick={() => handleSelectCrossLink(anc)}
+                              title={`Xem nhánh: ${anc.term}`}
+                            >
+                              <span className="figma-glossary-breadcrumb-icon">{idx === 0 ? '📁' : '📂'}</span>
+                              {idx === 0 && (
+                                <span className="figma-glossary-breadcrumb-parent-label">Nhóm:</span>
+                              )}
+                              <strong className="figma-glossary-breadcrumb-parent-name">{anc.term}</strong>
+                            </button>
+                            <span className="figma-glossary-breadcrumb-separator" aria-hidden="true">➔</span>
+                          </span>
+                        ))}
                         <span className="figma-glossary-breadcrumb-current" title="Thuật ngữ đang xem">
                           {activeTerm.term}
                         </span>
@@ -674,6 +854,14 @@ export default function GlossaryScreen({
                   {/* Thanh công cụ Admin */}
                   {isAuthenticated && (
                     <div className="figma-glossary-admin-actions">
+                      <button
+                        type="button"
+                        className="figma-glossary-btn-add-child"
+                        onClick={() => handleStartCreate(activeTerm.id)}
+                        title={`Thêm nhánh con trực tiếp dưới "${activeTerm.term}"`}
+                      >
+                        + Nhánh con
+                      </button>
                       <button
                         type="button"
                         className="figma-glossary-btn-edit"
@@ -712,15 +900,16 @@ export default function GlossaryScreen({
                         <div className="figma-glossary-children-title-wrap">
                           <span className="figma-glossary-children-icon">📂</span>
                           <h3 className="figma-glossary-media-title">
-                            Các thuật ngữ con liên quan ({activeTermChildren.length}):
+                            Các nhánh con trực tiếp ({activeTermChildren.length}):
                           </h3>
                         </div>
-                        <span className="figma-glossary-children-hint">Bấm vào thẻ để đọc chi tiết</span>
+                        <span className="figma-glossary-children-hint">Bấm vào thẻ để mở chi tiết &amp; nhánh sâu hơn</span>
                       </div>
 
                       <div className="figma-glossary-subterms-grid">
                         {activeTermChildren.map((child) => {
                           const childIsAdvanced = (child.level || 'basic').toLowerCase() === 'advanced';
+                          const grandChildrenCount = directChildrenCountMap.get(child.id) || 0;
                           const excerpt = child.definition
                             ? child.definition.replace(/\s+/g, ' ').slice(0, 110) +
                               (child.definition.length > 110 ? '...' : '')
@@ -730,7 +919,7 @@ export default function GlossaryScreen({
                               key={child.id}
                               type="button"
                               className="figma-glossary-subterm-mini-card"
-                              onClick={() => handleSelectCrossLink(child)}
+                              onClick={() => handleSelectCrossLink(child, true)}
                               title={`Xem chi tiết thuật ngữ: ${child.term}`}
                             >
                               <div className="figma-glossary-subterm-card-header">
@@ -744,7 +933,12 @@ export default function GlossaryScreen({
                               </div>
                               <p className="figma-glossary-subterm-card-desc">{excerpt}</p>
                               <div className="figma-glossary-subterm-card-footer">
-                                <span>Xem chi tiết ➔</span>
+                                {grandChildrenCount > 0 && (
+                                  <span className="figma-glossary-subterm-nested-badge">
+                                    📂 +{grandChildrenCount} nhánh con
+                                  </span>
+                                )}
+                                <span className="figma-glossary-subterm-card-link">Xem chi tiết ➔</span>
                               </div>
                             </button>
                           );

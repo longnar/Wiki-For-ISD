@@ -18,12 +18,12 @@ export class CreateCharacterDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 2, description: 'Độ khó (1-5)' })
+  @ApiPropertyOptional({ example: 2, description: 'Độ khó (1-6)' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(5)
+  @Max(6)
   difficulty?: number;
 
   @ApiPropertyOptional({ example: 'Rushdown', description: 'Loại nhân vật' })

@@ -53,6 +53,7 @@ const multer_1 = require("multer");
 const path = __importStar(require("path"));
 const character_service_1 = require("./character.service");
 const create_character_dto_1 = require("./dto/create-character.dto");
+const update_character_dto_1 = require("./dto/update-character.dto");
 const create_move_dto_1 = require("./dto/create-move.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
@@ -179,7 +180,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:paramtypes", [Number, update_character_dto_1.UpdateCharacterDto, Object]),
     __metadata("design:returntype", void 0)
 ], CharacterController.prototype, "updateCharacter", null);
 __decorate([

@@ -426,7 +426,7 @@ export default function CharacterDetailView({ character, isAuthenticated = false
                   </button>
                 )}
                 <span>•</span>
-                <span>Độ khó: <strong>{character?.difficulty || 3}/5</strong></span>
+                <span>Độ khó: <strong>{character?.difficulty || 3}/6</strong></span>
               </div>
             </div>
           </div>

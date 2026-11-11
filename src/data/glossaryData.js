@@ -120,6 +120,36 @@ export const INITIAL_GLOSSARY_TERMS = [
     image_url: '',
     created_at: '2026-10-01'
   },
+  {
+    id: 20,
+    term: 'Kara Cancel (Hủy đòn lướt tăng tầm)',
+    level: 'basic',
+    parent_id: 17,
+    definition: 'Hủy vài frame khởi động (Startup) đầu tiên của một đòn đánh thường có bước tiến về phía trước để chuyển sang Special Move, giúp chiêu đặc biệt vươn xa hơn bình thường.',
+    video_url: '',
+    image_url: '',
+    created_at: '2026-10-01'
+  },
+  {
+    id: 21,
+    term: 'Hit Confirm (Xác nhận trúng đòn trước khi Cancel)',
+    level: 'basic',
+    parent_id: 17,
+    definition: 'Quan sát xem đòn đánh thường có trúng đối thủ hay bị đỡ trước khi bấm lệnh Special Cancel, nhằm tránh tung chiêu đặc biệt không an toàn (Unsafe) vào khiên của đối phương.',
+    video_url: '',
+    image_url: '',
+    created_at: '2026-10-01'
+  },
+  {
+    id: 22,
+    term: 'Frame Trap (Bẫy khung hình)',
+    level: 'basic',
+    parent_id: 14,
+    definition: 'Chiến thuật tung một đòn có Plus on Block rồi chừa một khoảng hở nhỏ cố ý (1–3 frames) trước đòn tiếp theo. Nếu đối thủ nóng vội bấm nút phản công, họ sẽ bị ăn đòn Counter Hit cực đau.',
+    video_url: '',
+    image_url: '',
+    created_at: '2026-10-01'
+  },
 
   // --- ADVANCED TERMS ---
   {
@@ -138,6 +168,16 @@ export const INITIAL_GLOSSARY_TERMS = [
     level: 'advanced',
     parent_id: 8,
     definition: 'Tung đòn tấn công sao cho khung hình Active trễ (late active frames) chạm vào đối thủ ngay tại frame đầu tiên họ vừa đứng dậy. Kỹ thuật này gia tăng lợi thế khung hình on block/hit và đè bẹp các đòn bấm nút phản kháng thông thường của đối thủ.',
+    video_url: '',
+    image_url: '',
+    created_at: '2026-10-01'
+  },
+  {
+    id: 23,
+    term: 'Late Meaty (Gối đầu khung muộn tối đa lợi thế)',
+    level: 'advanced',
+    parent_id: 9,
+    definition: 'Biến thể nâng cao của Meaty: canh để những frame Active cuối cùng của đòn đánh mới chạm vào đối thủ khi vừa đứng dậy, qua đó cộng thêm tối đa số khung Plus on Block để tạo ra các chuỗi Frame Trap hoặc Mixup chặt chẽ hơn.',
     video_url: '',
     image_url: '',
     created_at: '2026-10-01'

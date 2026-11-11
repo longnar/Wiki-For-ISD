@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS characters (
     name VARCHAR(100) NOT NULL,
     debut_date DATE,
     description TEXT,
-    difficulty INT DEFAULT 1, -- 1 (Easy) to 5 (Hard)
+    difficulty INT DEFAULT 1, -- 1 (Easy) to 6 (Hardest)
     type VARCHAR(100), -- e.g., Rushdown, Zoner, Grappler, Puppet, etc.
     image_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

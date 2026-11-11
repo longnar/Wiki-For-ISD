@@ -1,5 +1,6 @@
 import { CharacterService } from './character.service';
 import { CreateCharacterDto } from './dto/create-character.dto';
+import { UpdateCharacterDto } from './dto/update-character.dto';
 import { CreateMoveDto, UpsertBaseStatsDto } from './dto/create-move.dto';
 export declare class CharacterController {
     private readonly characterService;
@@ -12,7 +13,7 @@ export declare class CharacterController {
         message: string;
         character: import("../../entities/character.entity").Character;
     }>;
-    updateCharacter(id: number, dto: Partial<CreateCharacterDto>, file?: Express.Multer.File): Promise<{
+    updateCharacter(id: number, dto: UpdateCharacterDto, file?: Express.Multer.File): Promise<{
         message: string;
         character: import("../../entities/character.entity").Character;
     }>;
