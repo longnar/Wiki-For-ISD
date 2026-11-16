@@ -64,11 +64,9 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateMoveDto.prototype, "ADV_ON_BLOCK", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: 4 }),
+    (0, swagger_1.ApiPropertyOptional)({ example: '+4 hoặc HKD' }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)(),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], CreateMoveDto.prototype, "ADV_ON_HIT", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 'Upper body invulnerable on frames 1-4' }),
@@ -82,6 +80,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateMoveDto.prototype, "hitbox_url", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '["/uploads/hitbox-1.png", "/uploads/hitbox-2.png"]' }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateMoveDto.prototype, "hitbox_urls", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 'Frame 6-8 Active Hitbox' }),
     (0, class_validator_1.IsOptional)(),

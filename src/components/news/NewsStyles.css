@@ -12,47 +12,54 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 30px 20px;
+  justify-content: flex-start;
+  padding: 84px 20px 24px;
   box-sizing: border-box;
   isolation: isolate;
 }
 
-/* Nút Back ở góc trên bên trái (Figma Node 396:274) */
+.figma-news-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Nút Back tích hợp trong Sidebar Header */
 .figma-news-back-btn {
-  position: absolute;
-  top: 36px;
-  left: 40px;
-  z-index: 20;
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 22px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
-  font-size: 16px;
+  font-family: var(--font-title);
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(8px);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
 }
 
 .figma-news-back-btn:hover {
   background: rgba(56, 189, 248, 0.35);
   border-color: #38bdf8;
-  transform: translateX(-4px);
+  color: #38bdf8;
+  transform: translateX(-2px);
   box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
 }
 
 /* Khung nền kính mờ tổng thể (Figma Node 396:263: 1455px x 812px, r: 30px) */
 .figma-news-container {
   position: relative;
-  width: min(1455px, 94vw);
-  height: min(830px, 86vh);
-  min-height: min(650px, 80vh);
+  width: min(1500px, 95vw);
+  height: calc(100vh - 108px);
+  max-height: 880px;
+  min-height: 560px;
   background: rgba(0, 0, 0, 0.54);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -458,11 +465,8 @@
   }
 
   .figma-news-back-btn {
-    position: relative;
-    top: auto;
-    left: auto;
-    align-self: flex-start;
-    margin-bottom: 12px;
+    padding: 5px 10px;
+    font-size: 12px;
   }
 
   .figma-news-container {

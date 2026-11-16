@@ -43,11 +43,9 @@ export class CreateMoveDto {
   @IsInt()
   ADV_ON_BLOCK?: number;
 
-  @ApiPropertyOptional({ example: 4 })
+  @ApiPropertyOptional({ example: '+4 hoặc HKD' })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  ADV_ON_HIT?: number;
+  ADV_ON_HIT?: string | number;
 
   @ApiPropertyOptional({ example: 'Upper body invulnerable on frames 1-4' })
   @IsOptional()
@@ -58,6 +56,10 @@ export class CreateMoveDto {
   @IsOptional()
   @IsString()
   hitbox_url?: string;
+
+  @ApiPropertyOptional({ example: '["/uploads/hitbox-1.png", "/uploads/hitbox-2.png"]' })
+  @IsOptional()
+  hitbox_urls?: string;
 
   @ApiPropertyOptional({ example: 'Frame 6-8 Active Hitbox' })
   @IsOptional()

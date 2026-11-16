@@ -1,9 +1,42 @@
+/* ==========================================================================
+   ARCADE & FGC TYPOGRAPHY: SVN-Determination & SVN-Coder's Crux
+   ========================================================================== */
+@font-face {
+  font-family: 'SVN-Determination';
+  src: local('SVN-Determination'),
+       local('SVN-Determination Sans'),
+       url('/fonts/SVN-Determination.otf') format('opentype'),
+       url('/fonts/SVN-Determination.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SVN-Coder's Crux";
+  src: local("SVN-Coder's Crux"),
+       local("SVN-Coders Crux"),
+       local("Coder's Crux"),
+       url("/fonts/SVN-Coder's-Crux.ttf") format('truetype'),
+       url("/fonts/SVN-Coders-Crux.ttf") format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  font-family: "SF Compact Rounded", "Trebuchet MS", sans-serif;
+  --font-title: 'SVN-Determination', 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+  --font-info: "SVN-Coder's Crux", 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  font-family: var(--font-info);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  letter-spacing: 0.02em;
 }
 
 * {

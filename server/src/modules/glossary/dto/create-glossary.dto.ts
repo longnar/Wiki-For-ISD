@@ -28,4 +28,9 @@ export class CreateGlossaryDto {
   @IsOptional()
   @IsString()
   video_url?: string;
+
+  @ApiPropertyOptional({ example: '["/uploads/img1.png", "/uploads/img2.png"]', description: 'Danh sách URL ảnh minh họa' })
+  @IsOptional()
+  @IsString()
+  image_urls?: string;
 }

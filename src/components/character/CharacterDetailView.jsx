@@ -158,9 +158,11 @@ export default function CharacterDetailView({ character, isAuthenticated = false
       ACTIVE: 3,
       RECOVERY: 10,
       ADV_ON_BLOCK: -2,
-      ADV_ON_HIT: 2,
+      ADV_ON_HIT: '+2',
       INVULNERABILITY: 'None',
       hitbox_url: '',
+      hitbox_urls: '',
+      hitbox_urls_text: '',
       hitbox_caption: '',
       properties: '',
       description: ''
@@ -173,6 +175,7 @@ export default function CharacterDetailView({ character, isAuthenticated = false
     setEditingMove(move);
     setHitboxFile(null);
     setHitboxPreview(move.hitbox_url || '');
+    const existingHitboxList = getHitboxList(move);
     setMoveForm({
       CHAR_MOVE: move.CHAR_MOVE || '',
       move_type: move.move_type || 'normal',
@@ -183,9 +186,11 @@ export default function CharacterDetailView({ character, isAuthenticated = false
       ACTIVE: move.ACTIVE ?? 3,
       RECOVERY: move.RECOVERY ?? 10,
       ADV_ON_BLOCK: move.ADV_ON_BLOCK ?? -2,
-      ADV_ON_HIT: move.ADV_ON_HIT ?? 2,
+      ADV_ON_HIT: move.ADV_ON_HIT != null ? String(move.ADV_ON_HIT) : '+2',
       INVULNERABILITY: move.INVULNERABILITY || 'None',
       hitbox_url: move.hitbox_url || '',
+      hitbox_urls: move.hitbox_urls || '',
+      hitbox_urls_text: existingHitboxList.join(', '),
       hitbox_caption: move.hitbox_caption || '',
       properties: move.properties || '',
       description: move.description || ''
@@ -201,6 +206,16 @@ export default function CharacterDetailView({ character, isAuthenticated = false
       return;
     }
 
+    const rawHitboxUrls = moveForm.hitbox_urls_text !== undefined 
+      ? moveForm.hitbox_urls_text 
+      : (moveForm.hitbox_urls ? (Array.isArray(moveForm.hitbox_urls) ? moveForm.hitbox_urls.join(', ') : moveForm.hitbox_urls) : (moveForm.hitbox_url || ''));
+    const parsedUrlsArray = String(rawHitboxUrls)
+      .split(/[\n,]/)
+      .map((u) => u.trim())
+      .filter(Boolean);
+    const finalPrimaryHitbox = parsedUrlsArray[0] || moveForm.hitbox_url || '';
+    const finalHitboxUrlsJson = parsedUrlsArray.length > 0 ? JSON.stringify(parsedUrlsArray) : null;
+
     const payload = {
       ...moveForm,
       CHAR_NAME: character?.name || 'Fighter',
@@ -209,8 +224,13 @@ export default function CharacterDetailView({ character, isAuthenticated = false
       ACTIVE: parseInt(moveForm.ACTIVE) || 0,
       RECOVERY: parseInt(moveForm.RECOVERY) || 0,
       ADV_ON_BLOCK: parseInt(moveForm.ADV_ON_BLOCK) || 0,
-      ADV_ON_HIT: parseInt(moveForm.ADV_ON_HIT) || 0
+      ADV_ON_HIT: moveForm.ADV_ON_HIT !== undefined && moveForm.ADV_ON_HIT !== null && String(moveForm.ADV_ON_HIT).trim() !== ''
+        ? String(moveForm.ADV_ON_HIT).trim()
+        : null,
+      hitbox_url: finalPrimaryHitbox,
+      hitbox_urls: finalHitboxUrlsJson,
     };
+    delete payload.hitbox_urls_text;
 
     try {
       if (character?.id && typeof character.id === 'number') {
@@ -357,18 +377,46 @@ export default function CharacterDetailView({ character, isAuthenticated = false
 
   const formatAdv = (val) => {
     if (val === undefined || val === null || val === '') return '-';
-    const num = Number(val);
-    if (isNaN(num)) return val;
-    if (num > 0) return `+${num}`;
-    return String(num);
+    const str = String(val).trim();
+    const num = Number(str);
+    if (!isNaN(num)) {
+      if (num > 0) return `+${num}`;
+      return String(num);
+    }
+    return str;
   };
 
   const getAdvClass = (val) => {
-    const num = Number(val);
-    if (isNaN(num)) return 'adv-zero';
-    if (num > 0) return 'adv-pos';
-    if (num < 0) return 'adv-neg';
-    return 'adv-zero';
+    if (val === undefined || val === null || val === '') return 'adv-zero';
+    const str = String(val).trim();
+    const num = Number(str);
+    if (!isNaN(num)) {
+      if (num > 0) return 'adv-pos';
+      if (num < 0) return 'adv-neg';
+      return 'adv-zero';
+    }
+    const upper = str.toUpperCase();
+    if (upper.includes('HKD') || upper.includes('HARD')) return 'adv-hkd';
+    if (upper.includes('SKD') || upper.includes('SOFT') || upper.includes('KD') || upper.includes('KNOCKDOWN')) return 'adv-skd';
+    if (upper.includes('LAUNCH') || upper.includes('BOUNCE') || upper.includes('CRUMPLE')) return 'adv-launch';
+    return 'adv-special';
+  };
+
+  const getHitboxList = (m) => {
+    if (!m) return [];
+    if (Array.isArray(m.hitbox_urls) && m.hitbox_urls.length > 0) {
+      return m.hitbox_urls;
+    }
+    if (typeof m.hitbox_urls === 'string' && m.hitbox_urls.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(m.hitbox_urls);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {
+        // ignore
+      }
+    }
+    if (m.hitbox_url) return [m.hitbox_url];
+    return [];
   };
 
   const getGuardClass = (guardVal) => {
@@ -391,23 +439,23 @@ export default function CharacterDetailView({ character, isAuthenticated = false
 
   return (
     <main className="figma-detail-screen" aria-label="Màn hình tra cứu Frame Data và Thông số nhân vật">
-      {/* Nút Back quay lại màn hình Showcase */}
-      <button
-        type="button"
-        className="figma-detail-back-btn"
-        onClick={onBack}
-        aria-label="Quay lại màn hình xem tướng"
-        title="Quay lại"
-      >
-        <span aria-hidden="true">&larr;</span>
-        <span>Back</span>
-      </button>
-
       {/* Khung tổng thể kính mờ */}
       <section className="figma-detail-container">
         {/* Header thông tin nhân vật */}
         <header className="figma-detail-header">
           <div className="figma-detail-header-left">
+            {/* Nút Back quay lại màn hình Showcase */}
+            <button
+              type="button"
+              className="figma-detail-back-btn"
+              onClick={onBack}
+              aria-label="Quay lại màn hình xem tướng"
+              title="Quay lại"
+            >
+              <span aria-hidden="true">&larr;</span>
+              <span>Back</span>
+            </button>
+
             {charAvatar && (
               <img src={charAvatar} alt={character?.name} className="figma-detail-char-avatar" />
             )}
@@ -913,25 +961,44 @@ export default function CharacterDetailView({ character, isAuthenticated = false
                       )}
 
                       {/* Khung va chạm Hitbox trong Drawer */}
-                      {m.hitbox_url && (
+                      {getHitboxList(m).length > 0 && (
                         <div className="figma-drawer-hitbox-section">
                           <span className="figma-drawer-subheading">Khung Va Chạm (Hitbox Frame):</span>
-                          <div
-                            className="figma-drawer-hitbox-preview"
-                            onClick={() =>
-                              setActiveHitboxModal({
-                                url: m.hitbox_url,
-                                name: m.CHAR_MOVE,
-                                caption: m.hitbox_caption,
-                                version: m.version
-                              })
-                            }
-                            title="Bấm vào để phóng to toàn màn hình"
-                          >
-                            <img src={m.hitbox_url} alt={`Hitbox ${m.CHAR_MOVE}`} className="figma-drawer-hitbox-img" />
-                            <div className="figma-drawer-hitbox-overlay">
-                              <span>🔍 Bấm phóng to</span>
-                            </div>
+                          <div className="figma-hitbox-thumbnails-grid" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            {getHitboxList(m).map((hUrl, hIdx) => (
+                              <div
+                                key={hIdx}
+                                className="figma-drawer-hitbox-preview"
+                                onClick={() =>
+                                  setActiveHitboxModal({
+                                    url: hUrl,
+                                    name: `${m.CHAR_MOVE} (Frame ${hIdx + 1})`,
+                                    caption: m.hitbox_caption,
+                                    version: m.version
+                                  })
+                                }
+                                title="Bấm vào để phóng to toàn màn hình"
+                                style={{ position: 'relative' }}
+                              >
+                                <img src={hUrl} alt={`Hitbox ${m.CHAR_MOVE} frame ${hIdx + 1}`} className="figma-drawer-hitbox-img" />
+                                {getHitboxList(m).length > 1 && (
+                                  <span style={{
+                                    position: 'absolute',
+                                    top: '4px',
+                                    left: '4px',
+                                    background: 'rgba(0,0,0,0.75)',
+                                    color: '#38bdf8',
+                                    fontSize: '11px',
+                                    fontWeight: 'bold',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                  }}>F{hIdx + 1}</span>
+                                )}
+                                <div className="figma-drawer-hitbox-overlay">
+                                  <span>🔍 Xem Frame {hIdx + 1}</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                           {m.hitbox_caption && (
                             <span className="figma-drawer-hitbox-caption">💡 {m.hitbox_caption}</span>
@@ -997,39 +1064,90 @@ export default function CharacterDetailView({ character, isAuthenticated = false
                     <div className="figma-mizuumi-card-content-grid">
                       {/* Cột Trái: Khung hiển thị ảnh Hitbox */}
                       <div className="figma-mizuumi-hitbox-pane">
-                        <div
-                          className={`figma-mizuumi-hitbox-frame ${m.hitbox_url ? 'has-image' : 'no-image'}`}
-                          onClick={() => {
-                            if (m.hitbox_url) {
-                              setActiveHitboxModal({
-                                url: m.hitbox_url,
-                                name: m.CHAR_MOVE,
-                                caption: m.hitbox_caption,
-                                version: m.version
-                              });
-                            }
-                          }}
-                          title={m.hitbox_url ? 'Bấm để phóng to khung va chạm' : 'Chưa có ảnh Hitbox'}
-                        >
-                          {m.hitbox_url ? (
-                            <>
-                              <div className="figma-hitbox-badge-tag">HITBOX</div>
-                              <img
-                                src={m.hitbox_url}
-                                alt={`Hitbox ${m.CHAR_MOVE}`}
-                                className="figma-mizuumi-hitbox-thumb"
-                              />
-                              <div className="figma-hitbox-zoom-hint">
-                                <span>🔍 Phóng to</span>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="figma-hitbox-empty-placeholder">
-                              <span className="figma-hitbox-empty-icon">🎯</span>
-                              <span className="figma-hitbox-empty-text">Chưa có ảnh Hitbox</span>
+                        {(() => {
+                          const hitboxes = getHitboxList(m);
+                          const hasImages = hitboxes.length > 0;
+                          return (
+                            <div
+                              className={`figma-mizuumi-hitbox-frame ${hasImages ? 'has-image' : 'no-image'}`}
+                              onClick={() => {
+                                if (hasImages) {
+                                  setActiveHitboxModal({
+                                    url: hitboxes[0],
+                                    name: m.CHAR_MOVE,
+                                    caption: m.hitbox_caption,
+                                    version: m.version
+                                  });
+                                }
+                              }}
+                              title={hasImages ? 'Bấm để phóng to khung va chạm' : 'Chưa có ảnh Hitbox'}
+                            >
+                              {hasImages ? (
+                                <>
+                                  <div className="figma-hitbox-badge-tag">
+                                    HITBOX {hitboxes.length > 1 ? `(${hitboxes.length})` : ''}
+                                  </div>
+                                  <img
+                                    src={hitboxes[0]}
+                                    alt={`Hitbox ${m.CHAR_MOVE}`}
+                                    className="figma-mizuumi-hitbox-thumb"
+                                  />
+                                  <div className="figma-hitbox-zoom-hint">
+                                    <span>🔍 Phóng to</span>
+                                  </div>
+                                  {hitboxes.length > 1 && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        bottom: '8px',
+                                        left: '8px',
+                                        right: '8px',
+                                        display: 'flex',
+                                        gap: '6px',
+                                        zIndex: 3,
+                                        justifyContent: 'center',
+                                        flexWrap: 'wrap'
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {hitboxes.map((hUrl, hIdx) => (
+                                        <button
+                                          key={hIdx}
+                                          type="button"
+                                          onClick={() =>
+                                            setActiveHitboxModal({
+                                              url: hUrl,
+                                              name: `${m.CHAR_MOVE} (Frame ${hIdx + 1})`,
+                                              caption: m.hitbox_caption,
+                                              version: m.version
+                                            })
+                                          }
+                                          style={{
+                                            padding: '2px 8px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                            background: 'rgba(15, 23, 42, 0.85)',
+                                            color: '#38bdf8',
+                                            border: '1px solid rgba(56, 189, 248, 0.5)',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          F{hIdx + 1}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="figma-hitbox-empty-placeholder">
+                                  <span className="figma-hitbox-empty-icon">🎯</span>
+                                  <span className="figma-hitbox-empty-text">Chưa có ảnh Hitbox</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
                         {m.hitbox_caption && (
                           <div className="figma-mizuumi-hitbox-subnote">
                             <span>{m.hitbox_caption}</span>
@@ -1227,10 +1345,11 @@ export default function CharacterDetailView({ character, isAuthenticated = false
                   />
                 </div>
                 <div className="figma-detail-edit-field">
-                  <label htmlFor="move-input-hit">Adv on Hit</label>
+                  <label htmlFor="move-input-hit">Adv on Hit (Số hoặc Chữ: HKD, SKD, Launch...)</label>
                   <input
                     id="move-input-hit"
-                    type="number"
+                    type="text"
+                    placeholder="VD: +2, -4, HKD, SKD, Launch..."
                     value={moveForm.ADV_ON_HIT}
                     onChange={(e) => setMoveForm({ ...moveForm, ADV_ON_HIT: e.target.value })}
                   />
@@ -1297,16 +1416,18 @@ export default function CharacterDetailView({ character, isAuthenticated = false
                   </div>
 
                   <div className="figma-detail-edit-field">
-                    <label htmlFor="move-input-hitbox-url">Hoặc nhập liên kết URL ảnh ngoài</label>
+                    <label htmlFor="move-input-hitbox-url">Hoặc nhập URL ảnh ngoài (nhiều ảnh, cách nhau bằng dấu phẩy)</label>
                     <input
                       id="move-input-hitbox-url"
                       type="text"
-                      placeholder="https://... hoặc /hitboxes/hitbox-5l.svg"
-                      value={moveForm.hitbox_url}
+                      placeholder="https://...frame1.png, https://...frame2.png"
+                      value={moveForm.hitbox_urls_text !== undefined ? moveForm.hitbox_urls_text : (moveForm.hitbox_url || '')}
                       onChange={(e) => {
-                        setMoveForm({ ...moveForm, hitbox_url: e.target.value });
+                        const val = e.target.value;
+                        const first = val.split(/[\n,]/)[0]?.trim() || '';
+                        setMoveForm({ ...moveForm, hitbox_urls_text: val, hitbox_url: first });
                         if (!hitboxFile) {
-                          setHitboxPreview(e.target.value);
+                          setHitboxPreview(first);
                         }
                       }}
                     />

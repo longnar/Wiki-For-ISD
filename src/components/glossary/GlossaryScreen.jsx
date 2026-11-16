@@ -76,6 +76,23 @@ function getDescendantIds(rootId, allItems) {
   return descendants;
 }
 
+function getGlossaryImageList(term) {
+  if (!term) return [];
+  if (Array.isArray(term.image_urls) && term.image_urls.length > 0) {
+    return term.image_urls;
+  }
+  if (typeof term.image_urls === 'string' && term.image_urls.trim().startsWith('[')) {
+    try {
+      const parsed = JSON.parse(term.image_urls);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {
+      // ignore
+    }
+  }
+  if (term.image_url) return [term.image_url];
+  return [];
+}
+
 export default function GlossaryScreen({
   level = 'basic', // 'basic' | 'advanced'
   isAuthenticated = false,
@@ -93,6 +110,8 @@ export default function GlossaryScreen({
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [expandedParentIds, setExpandedParentIds] = useState(new Set());
+  const [lightboxImage, setLightboxImage] = useState(null); // { url, caption }
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
 
   // Form state cho Admin
   const [formData, setFormData] = useState({
@@ -290,6 +309,33 @@ export default function GlossaryScreen({
     return glossaries.filter((g) => g.parent_id === activeTerm.id);
   }, [activeTerm, glossaries]);
 
+  // Thuật ngữ cha trực tiếp (nếu có)
+  const parentTerm = useMemo(() => {
+    if (!activeTerm || !activeTerm.parent_id) return null;
+    return glossariesById.get(Number(activeTerm.parent_id)) || glossariesById.get(activeTerm.parent_id) || null;
+  }, [activeTerm, glossariesById]);
+
+  // Danh sách hình ảnh của thuật ngữ đang xem
+  const activeImages = useMemo(() => {
+    return getGlossaryImageList(activeTerm);
+  }, [activeTerm]);
+
+  // Reset selected image index khi đổi thuật ngữ
+  useEffect(() => {
+    setSelectedImageIdx(0);
+  }, [activeTerm?.id]);
+
+  // Đóng Lightbox khi bấm phím Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && lightboxImage) {
+        setLightboxImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImage]);
+
   // Danh sách ứng viên có thể làm cha trong Form (loại trừ chính nó + toàn bộ con/cháu để chống vòng lặp)
   const potentialParents = useMemo(() => {
     const targetLevel = (formData.level || level).toLowerCase();
@@ -394,6 +440,7 @@ export default function GlossaryScreen({
   // Mở form chỉnh sửa (Admin)
   const handleStartEdit = () => {
     if (!activeTerm) return;
+    const existingList = getGlossaryImageList(activeTerm);
     setFormData({
       id: activeTerm.id,
       term: activeTerm.term || '',
@@ -403,6 +450,8 @@ export default function GlossaryScreen({
       video_url: activeTerm.video_url || '',
       image: null,
       image_preview: activeTerm.image_url || '',
+      image_urls: activeTerm.image_urls || '',
+      image_urls_text: existingList.join(', '),
       remove_image: false,
     });
     setIsEditing(true);
@@ -420,6 +469,8 @@ export default function GlossaryScreen({
       video_url: '',
       image: null,
       image_preview: '',
+      image_urls: '',
+      image_urls_text: '',
       remove_image: false,
     });
     setIsCreating(true);
@@ -434,6 +485,14 @@ export default function GlossaryScreen({
       return;
     }
 
+    const rawImgUrls = formData.image_urls_text !== undefined ? formData.image_urls_text : (formData.image_urls || formData.image_url || '');
+    const imgArray = String(rawImgUrls)
+      .split(/[\n,]/)
+      .map((u) => u.trim())
+      .filter(Boolean);
+    const primaryImgUrl = imgArray[0] || (formData.remove_image ? '' : (formData.image_preview || ''));
+    const imageUrlsJson = imgArray.length > 0 ? JSON.stringify(imgArray) : null;
+
     try {
       const form = new FormData();
       form.append('term', formData.term.trim());
@@ -442,6 +501,9 @@ export default function GlossaryScreen({
       form.append('parent_id', formData.parent_id ? String(formData.parent_id) : '');
       // Luôn gửi video_url (kể cả rỗng) để server và database xóa sạch liên kết cũ
       form.append('video_url', formData.video_url ? formData.video_url.trim() : '');
+      if (imageUrlsJson) {
+        form.append('image_urls', imageUrlsJson);
+      }
       if (formData.remove_image) {
         form.append('remove_image', 'true');
       }
@@ -475,7 +537,8 @@ export default function GlossaryScreen({
         level: level,
         parent_id: formData.parent_id || null,
         video_url: formData.video_url ? formData.video_url.trim() : '',
-        image_url: formData.remove_image ? '' : (formData.image_preview || ''),
+        image_url: primaryImgUrl,
+        image_urls: imageUrlsJson,
       };
 
       setGlossaries((prev) => {
@@ -593,28 +656,29 @@ export default function GlossaryScreen({
 
   return (
     <main className="figma-glossary-screen" aria-label={`Màn hình ${pageTitle}`}>
-      {/* Nút Back quay lại trang danh mục Glossary */}
-      <button
-        type="button"
-        className="figma-glossary-back-btn"
-        onClick={() => {
-          if (onBackHome) onBackHome();
-        }}
-        aria-label="Quay lại danh mục Glossary"
-        title="Quay lại danh mục Glossary"
-      >
-        <span aria-hidden="true">&larr;</span>
-        <span>Back</span>
-      </button>
-
       {/* Khung tổng thể kính mờ */}
       <section className="figma-glossary-container">
         {/* CỘT TRÁI: DANH SÁCH THUẬT NGỮ (SMART ACCORDION - PHƯƠNG ÁN A) */}
         <aside className="figma-glossary-sidebar" aria-label={`Danh sách ${pageTitle}`}>
           <div className="figma-glossary-sidebar-header">
-            <h2 className="figma-glossary-sidebar-title">
-              <span>{pageTitle}</span>
-            </h2>
+            <div className="figma-glossary-header-actions">
+              {/* Nút Back quay lại trang danh mục Glossary */}
+              <button
+                type="button"
+                className="figma-glossary-back-btn"
+                onClick={() => {
+                  if (onBackHome) onBackHome();
+                }}
+                aria-label="Quay lại danh mục Glossary"
+                title="Quay lại danh mục Glossary"
+              >
+                <span aria-hidden="true">&larr;</span>
+                <span>Back</span>
+              </button>
+              <h2 className="figma-glossary-sidebar-title">
+                <span>{pageTitle}</span>
+              </h2>
+            </div>
 
             {/* Nút thêm mới dành cho Admin */}
             {isAuthenticated && (
@@ -790,6 +854,30 @@ export default function GlossaryScreen({
                     }}
                   />
                 </div>
+
+                <div className="figma-glossary-field" style={{ gridColumn: '1 / -1' }}>
+                  <label className="figma-glossary-label" htmlFor="glossary-image-urls-input">
+                    Hoặc nhập URL ảnh minh họa (nhiều ảnh, phân tách bằng dấu phẩy)
+                  </label>
+                  <input
+                    id="glossary-image-urls-input"
+                    type="text"
+                    className="figma-glossary-input"
+                    value={formData.image_urls_text !== undefined ? formData.image_urls_text : (formData.image_urls || formData.image_url || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const first = val.split(/[\n,]/)[0]?.trim() || '';
+                      setFormData({
+                        ...formData,
+                        image_urls_text: val,
+                        image_url: first,
+                        image_preview: first,
+                        remove_image: !val.trim(),
+                      });
+                    }}
+                    placeholder="VD: https://.../step1.png, https://.../step2.png"
+                  />
+                </div>
               </div>
 
               <div className="figma-glossary-field" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -883,138 +971,283 @@ export default function GlossaryScreen({
                 </header>
 
                 <div className="figma-glossary-body-scroll">
-                  {/* Nội dung định nghĩa tích hợp Term Cross-linking & Hover Tooltip */}
-                  <div className="figma-glossary-body-text">
-                    {parseDefinitionWithLinks(
-                      activeTerm.definition,
-                      glossaries,
-                      activeTerm.id,
-                      handleSelectCrossLink
-                    )}
-                  </div>
-
-                  {/* Khối hiển thị các thuật ngữ con dạng Mini Cards Grid */}
-                  {activeTermChildren.length > 0 && (
-                    <div className="figma-glossary-children-box">
-                      <div className="figma-glossary-children-header">
-                        <div className="figma-glossary-children-title-wrap">
-                          <span className="figma-glossary-children-icon">📂</span>
-                          <h3 className="figma-glossary-media-title">
-                            Các nhánh con trực tiếp ({activeTermChildren.length}):
-                          </h3>
-                        </div>
-                        <span className="figma-glossary-children-hint">Bấm vào thẻ để mở chi tiết &amp; nhánh sâu hơn</span>
+                  <div className="figma-glossary-article-layout">
+                    {/* CỘT TRÁI: ĐỊNH NGHĨA & CÁC NHÁNH CON */}
+                    <div className="figma-glossary-article-main">
+                      {/* Nội dung định nghĩa tích hợp Term Cross-linking & Hover Tooltip */}
+                      <div className="figma-glossary-body-text">
+                        {parseDefinitionWithLinks(
+                          activeTerm.definition,
+                          glossaries,
+                          activeTerm.id,
+                          handleSelectCrossLink
+                        )}
                       </div>
 
-                      <div className="figma-glossary-subterms-grid">
-                        {activeTermChildren.map((child) => {
-                          const childIsAdvanced = (child.level || 'basic').toLowerCase() === 'advanced';
-                          const grandChildrenCount = directChildrenCountMap.get(child.id) || 0;
-                          const excerpt = child.definition
-                            ? child.definition.replace(/\s+/g, ' ').slice(0, 110) +
-                              (child.definition.length > 110 ? '...' : '')
-                            : 'Chưa có định nghĩa chi tiết.';
-                          return (
-                            <button
-                              key={child.id}
-                              type="button"
-                              className="figma-glossary-subterm-mini-card"
-                              onClick={() => handleSelectCrossLink(child, true)}
-                              title={`Xem chi tiết thuật ngữ: ${child.term}`}
-                            >
-                              <div className="figma-glossary-subterm-card-header">
-                                <div className="figma-glossary-subterm-card-title-wrap">
-                                  <span className="figma-glossary-subterm-bullet">↳</span>
-                                  <strong className="figma-glossary-subterm-card-title">{child.term}</strong>
-                                </div>
-                                <span className={`figma-glossary-badge-mini ${childIsAdvanced ? 'advanced' : 'basic'}`}>
-                                  {childIsAdvanced ? 'Nâng cao' : 'Cơ bản'}
-                                </span>
-                              </div>
-                              <p className="figma-glossary-subterm-card-desc">{excerpt}</p>
-                              <div className="figma-glossary-subterm-card-footer">
-                                {grandChildrenCount > 0 && (
-                                  <span className="figma-glossary-subterm-nested-badge">
-                                    📂 +{grandChildrenCount} nhánh con
-                                  </span>
-                                )}
-                                <span className="figma-glossary-subterm-card-link">Xem chi tiết ➔</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                      {/* Khối hiển thị các thuật ngữ con dạng Mini Cards Grid */}
+                      {activeTermChildren.length > 0 && (
+                        <div className="figma-glossary-children-box">
+                          <div className="figma-glossary-children-header">
+                            <div className="figma-glossary-children-title-wrap">
+                              <span className="figma-glossary-children-icon">📂</span>
+                              <h3 className="figma-glossary-media-title">
+                                Các nhánh con trực tiếp ({activeTermChildren.length}):
+                              </h3>
+                            </div>
+                            <span className="figma-glossary-children-hint">Bấm vào thẻ để mở chi tiết &amp; nhánh sâu hơn</span>
+                          </div>
 
-                  {/* Video URL minh họa (Embedded Player) */}
-                  {activeTerm.video_url && (
-                    <div className="figma-glossary-media-box">
-                      <div className="figma-glossary-media-header">
-                        <h3 className="figma-glossary-media-title">Video minh họa:</h3>
-                        <a
-                          href={activeTerm.video_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="figma-glossary-video-link"
-                          title="Mở video trong tab mới"
-                        >
-                          <span>Mở liên kết ↗</span>
-                        </a>
-                      </div>
-
-                      {getYouTubeEmbedUrl(activeTerm.video_url) ? (
-                        <div className="figma-glossary-video-embed-wrap">
-                          <iframe
-                            src={getYouTubeEmbedUrl(activeTerm.video_url)}
-                            title={`Video minh họa ${activeTerm.term}`}
-                            className="figma-glossary-video-iframe"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      ) : isDirectVideoUrl(activeTerm.video_url) ? (
-                        <div className="figma-glossary-video-embed-wrap">
-                          <video
-                            src={activeTerm.video_url}
-                            controls
-                            className="figma-glossary-video-tag"
-                            preload="metadata"
-                          />
-                        </div>
-                      ) : (
-                        <div className="figma-glossary-video-fallback">
-                          <a
-                            href={activeTerm.video_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="figma-glossary-video-fallback-btn"
-                          >
-                            ▶ Xem video tại: {activeTerm.video_url}
-                          </a>
+                          <div className="figma-glossary-subterms-grid">
+                            {activeTermChildren.map((child) => {
+                              const childIsAdvanced = (child.level || 'basic').toLowerCase() === 'advanced';
+                              const grandChildrenCount = directChildrenCountMap.get(child.id) || 0;
+                              const excerpt = child.definition
+                                ? child.definition.replace(/\s+/g, ' ').slice(0, 110) +
+                                  (child.definition.length > 110 ? '...' : '')
+                                : 'Chưa có định nghĩa chi tiết.';
+                              return (
+                                <button
+                                  key={child.id}
+                                  type="button"
+                                  className="figma-glossary-subterm-mini-card"
+                                  onClick={() => handleSelectCrossLink(child, true)}
+                                  title={`Xem chi tiết thuật ngữ: ${child.term}`}
+                                >
+                                  <div className="figma-glossary-subterm-card-header">
+                                    <div className="figma-glossary-subterm-card-title-wrap">
+                                      <span className="figma-glossary-subterm-bullet">↳</span>
+                                      <strong className="figma-glossary-subterm-card-title">{child.term}</strong>
+                                    </div>
+                                    <span className={`figma-glossary-badge-mini ${childIsAdvanced ? 'advanced' : 'basic'}`}>
+                                      {childIsAdvanced ? 'Nâng cao' : 'Cơ bản'}
+                                    </span>
+                                  </div>
+                                  <p className="figma-glossary-subterm-card-desc">{excerpt}</p>
+                                  <div className="figma-glossary-subterm-card-footer">
+                                    {grandChildrenCount > 0 && (
+                                      <span className="figma-glossary-subterm-nested-badge">
+                                        📂 +{grandChildrenCount} nhánh con
+                                      </span>
+                                    )}
+                                    <span className="figma-glossary-subterm-card-link">Xem chi tiết ➔</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
-                  )}
 
-                  {/* Hình ảnh minh họa */}
-                  {activeTerm.image_url && (
-                    <div className="figma-glossary-media-box">
-                      <h3 className="figma-glossary-media-title">Hình ảnh minh họa:</h3>
-                      <img
-                        src={activeTerm.image_url}
-                        alt={activeTerm.term}
-                        className="figma-glossary-img-preview"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
+                    {/* CỘT PHẢI: QUICK FACTS & MEDIA */}
+                    <aside className="figma-glossary-article-aside">
+                      {/* Thẻ Quick Facts */}
+                      <div className="figma-glossary-quick-facts-card">
+                        <div className="figma-quick-facts-header">
+                          <span aria-hidden="true">⚡</span>
+                          <h4>Thông tin nhanh</h4>
+                        </div>
+                        <div className="figma-quick-facts-list">
+                          <div className="figma-quick-fact-row">
+                            <span className="figma-quick-fact-label">Cấp độ:</span>
+                            <span className="figma-quick-fact-val">
+                              {(activeTerm.level || 'basic').toLowerCase() === 'advanced' ? 'Nâng cao' : 'Cơ bản'}
+                            </span>
+                          </div>
+                          <div className="figma-quick-fact-row">
+                            <span className="figma-quick-fact-label">Nhóm cha:</span>
+                            {parentTerm ? (
+                              <button
+                                type="button"
+                                className="figma-quick-fact-link-btn"
+                                onClick={() => handleSelectCrossLink(parentTerm, true)}
+                                title={`Đến nhóm cha: ${parentTerm.term}`}
+                              >
+                                {parentTerm.term} ➔
+                              </button>
+                            ) : (
+                              <span className="figma-quick-fact-val" style={{ color: '#94a3b8' }}>Gốc (Root)</span>
+                            )}
+                          </div>
+                          <div className="figma-quick-fact-row">
+                            <span className="figma-quick-fact-label">Nhánh con:</span>
+                            <span className="figma-quick-fact-val">
+                              {activeTermChildren.length > 0 ? `${activeTermChildren.length} nhánh` : 'Không có'}
+                            </span>
+                          </div>
+                          <div className="figma-quick-fact-row">
+                            <span className="figma-quick-fact-label">Minh họa:</span>
+                            <span className="figma-quick-fact-val">
+                              {[
+                                activeTerm.video_url ? 'Video' : null,
+                                activeImages.length > 0 ? `${activeImages.length} ảnh` : null,
+                              ].filter(Boolean).join(' + ') || 'Văn bản'}
+                            </span>
+                          </div>
+                          <div className="figma-quick-fact-row">
+                            <span className="figma-quick-fact-label">Mã thuật ngữ:</span>
+                            <span className="figma-quick-fact-val" style={{ opacity: 0.75 }}>
+                              #{activeTerm.id}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Khối Media minh họa (Video & Ảnh) */}
+                      {(activeTerm.video_url || activeImages.length > 0) && (
+                        <div className="figma-glossary-media-sidebar-box">
+                          {/* Video minh họa (nếu có) */}
+                          {activeTerm.video_url && (
+                            <div className="figma-glossary-media-subgroup">
+                              <div className="figma-glossary-media-header-compact">
+                                <h4 className="figma-glossary-media-title" style={{ fontSize: '13px', margin: 0 }}>Video minh họa</h4>
+                                <a
+                                  href={activeTerm.video_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="figma-glossary-video-link"
+                                  style={{ fontSize: '12px' }}
+                                  title="Mở video trong tab mới"
+                                >
+                                  Mở ↗
+                                </a>
+                              </div>
+                              {getYouTubeEmbedUrl(activeTerm.video_url) ? (
+                                <div className="figma-glossary-video-embed-wrap">
+                                  <iframe
+                                    src={getYouTubeEmbedUrl(activeTerm.video_url)}
+                                    title={`Video minh họa ${activeTerm.term}`}
+                                    className="figma-glossary-video-iframe"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                </div>
+                              ) : isDirectVideoUrl(activeTerm.video_url) ? (
+                                <div className="figma-glossary-video-embed-wrap">
+                                  <video
+                                    src={activeTerm.video_url}
+                                    controls
+                                    className="figma-glossary-video-tag"
+                                    preload="metadata"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="figma-glossary-video-fallback">
+                                  <a
+                                    href={activeTerm.video_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="figma-glossary-video-fallback-btn"
+                                  >
+                                    ▶ Xem video tại link
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Hình ảnh minh họa (nếu có) */}
+                          {activeImages.length > 0 && (
+                            <div className="figma-glossary-media-subgroup">
+                              <div className="figma-glossary-media-header-compact">
+                                <h4 className="figma-glossary-media-title" style={{ fontSize: '13px', margin: 0 }}>
+                                  Hình ảnh {activeImages.length > 1 ? `(${selectedImageIdx + 1}/${activeImages.length})` : ''}
+                                </h4>
+                                <span style={{ fontSize: '11px', color: '#94a3b8' }}>Bấm để phóng to</span>
+                              </div>
+
+                              <div
+                                className="figma-glossary-img-preview-box"
+                                onClick={() =>
+                                  setLightboxImage({
+                                    url: activeImages[selectedImageIdx] || activeImages[0],
+                                    caption: `${activeTerm.term}${activeImages.length > 1 ? ` (${selectedImageIdx + 1}/${activeImages.length})` : ''}`,
+                                  })
+                                }
+                                title="Bấm để phóng to ảnh toàn màn hình"
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    setLightboxImage({
+                                      url: activeImages[selectedImageIdx] || activeImages[0],
+                                      caption: `${activeTerm.term}${activeImages.length > 1 ? ` (${selectedImageIdx + 1}/${activeImages.length})` : ''}`,
+                                    });
+                                  }
+                                }}
+                              >
+                                <img
+                                  src={activeImages[selectedImageIdx] || activeImages[0]}
+                                  alt={`${activeTerm.term} minh họa`}
+                                  className="figma-glossary-img-preview"
+                                  loading="lazy"
+                                />
+                                <span className="figma-glossary-img-zoom-tag">🔍 Phóng to</span>
+                              </div>
+
+                              {/* Thumbnail strip nếu có nhiều ảnh */}
+                              {activeImages.length > 1 && (
+                                <div className="figma-glossary-thumbs-row">
+                                  {activeImages.map((imgUrl, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      className={`figma-glossary-thumb-btn ${idx === selectedImageIdx ? 'active' : ''}`}
+                                      onClick={() => setSelectedImageIdx(idx)}
+                                      title={`Xem ảnh ${idx + 1}`}
+                                      aria-label={`Xem ảnh ${idx + 1}`}
+                                    >
+                                      <img src={imgUrl} alt={`Thumb ${idx + 1}`} loading="lazy" />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </aside>
+                  </div>
                 </div>
               </>
             )
           )}
         </section>
       </section>
+
+      {/* Lightbox Modal phóng to ảnh */}
+      {lightboxImage && (
+        <div
+          className="figma-glossary-lightbox-backdrop"
+          onClick={() => setLightboxImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xem ảnh phóng to"
+        >
+          <div
+            className="figma-glossary-lightbox-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="figma-glossary-lightbox-close"
+              onClick={() => setLightboxImage(null)}
+              aria-label="Đóng ảnh phóng to"
+              title="Đóng (Esc)"
+            >
+              ✕
+            </button>
+            <img
+              src={lightboxImage.url}
+              alt={lightboxImage.caption || 'Ảnh minh họa phóng to'}
+              className="figma-glossary-lightbox-img"
+            />
+            {lightboxImage.caption && (
+              <p className="figma-glossary-lightbox-caption">{lightboxImage.caption}</p>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

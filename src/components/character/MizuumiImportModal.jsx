@@ -25,6 +25,12 @@ function localParseWikitext(raw, characterName) {
       return m ? parseInt(m[1], 10) : null;
     };
 
+    const parseAdvHit = (v) => {
+      if (v === undefined || v === null || v === '') return null;
+      const s = String(v).trim();
+      return s === '-' ? null : s;
+    };
+
     const cmd = command.trim();
     let moveType = 'normal';
     const cmdLower = cmd.toLowerCase();
@@ -39,7 +45,7 @@ function localParseWikitext(raw, characterName) {
       ACTIVE: parseNum(rawProps['active']),
       RECOVERY: parseNum(rawProps['recovery'] || rawProps['rec']),
       ADV_ON_BLOCK: parseNum(rawProps['onblock'] || rawProps['on_block'] || rawProps['adv_on_block']),
-      ADV_ON_HIT: parseNum(rawProps['onhit'] || rawProps['on_hit'] || rawProps['adv_on_hit']),
+      ADV_ON_HIT: parseAdvHit(rawProps['onhit'] || rawProps['on_hit'] || rawProps['adv_on_hit']),
       INVULNERABILITY: rawProps['invuln'] || rawProps['invulnerability'] || null,
       guard: rawProps['guard'] || 'Mid',
       move_type: moveType,
@@ -356,8 +362,16 @@ export default function MizuumiImportModal({
                         <td style={{ color: (m.ADV_ON_BLOCK || 0) >= 0 ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>
                           {(m.ADV_ON_BLOCK || 0) > 0 ? `+${m.ADV_ON_BLOCK}` : m.ADV_ON_BLOCK ?? '-'}
                         </td>
-                        <td style={{ color: (m.ADV_ON_HIT || 0) >= 0 ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>
-                          {(m.ADV_ON_HIT || 0) > 0 ? `+${m.ADV_ON_HIT}` : m.ADV_ON_HIT ?? '-'}
+                        <td style={{
+                          color: typeof m.ADV_ON_HIT === 'string' && isNaN(Number(m.ADV_ON_HIT)) ? '#c084fc' : (Number(m.ADV_ON_HIT) >= 0 ? '#4ade80' : '#f87171'),
+                          fontWeight: 'bold'
+                        }}>
+                          {(() => {
+                            if (m.ADV_ON_HIT === undefined || m.ADV_ON_HIT === null || m.ADV_ON_HIT === '') return '-';
+                            const num = Number(m.ADV_ON_HIT);
+                            if (isNaN(num)) return m.ADV_ON_HIT;
+                            return num > 0 ? `+${num}` : String(num);
+                          })()}
                         </td>
                         <td>
                           <span className={`figma-mizuumi-type-pill ${m.move_type}`}>

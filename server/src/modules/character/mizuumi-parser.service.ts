@@ -8,7 +8,7 @@ export interface ParsedMizuumiMove {
   ACTIVE: number | null;
   RECOVERY: number | null;
   ADV_ON_BLOCK: number | null;
-  ADV_ON_HIT: number | null;
+  ADV_ON_HIT: string | null;
   INVULNERABILITY: string | null;
   guard: string | null;
   move_type: string;
@@ -16,6 +16,7 @@ export interface ParsedMizuumiMove {
   properties: string | null;
   description: string | null;
   hitbox_url: string | null;
+  hitbox_urls?: string | null;
   hitbox_caption: string | null;
   status?: 'new' | 'modified' | 'unchanged';
   diffFields?: string[];
@@ -135,7 +136,7 @@ export class MizuumiParserService {
       ACTIVE: this.parseNumber(raw.ACTIVE ?? raw.active),
       RECOVERY: this.parseNumber(raw.RECOVERY ?? raw.recovery),
       ADV_ON_BLOCK: this.parseNumber(raw.ADV_ON_BLOCK ?? raw.onBlock ?? raw.on_block),
-      ADV_ON_HIT: this.parseNumber(raw.ADV_ON_HIT ?? raw.onHit ?? raw.on_hit),
+      ADV_ON_HIT: this.parseAdvOnHit(raw.ADV_ON_HIT ?? raw.onHit ?? raw.on_hit),
       INVULNERABILITY: raw.INVULNERABILITY || raw.invuln ? String(raw.INVULNERABILITY || raw.invuln).trim() : null,
       guard: this.normalizeGuard(raw.guard),
       move_type: moveType,
@@ -145,6 +146,13 @@ export class MizuumiParserService {
       hitbox_url: this.normalizeHitboxUrl(raw.hitbox_url || raw.hitbox || raw.image),
       hitbox_caption: raw.hitbox_caption || raw.caption ? String(raw.hitbox_caption || raw.caption).trim() : null,
     };
+  }
+
+  private parseAdvOnHit(val: any): string | null {
+    if (val === undefined || val === null || val === '') return null;
+    const str = String(val).trim();
+    if (!str || str === '-') return null;
+    return str;
   }
 
   private parseNumber(val: any): number | null {

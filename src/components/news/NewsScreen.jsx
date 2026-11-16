@@ -147,28 +147,29 @@ export default function NewsScreen({ isAuthenticated = false, onBackHome }) {
 
   return (
     <main className="figma-news-screen" aria-label="Man hinh tin tuc cap nhat">
-      {/* Nut Back quay lai trang chu */}
-      <button
-        type="button"
-        className="figma-news-back-btn"
-        onClick={() => {
-          if (onBackHome) onBackHome();
-        }}
-        aria-label="Quay lai trang chinh"
-        title="Quay lai Trang Chu"
-      >
-        <span aria-hidden="true">&larr;</span>
-        <span>Back</span>
-      </button>
-
       {/* Khung tong the (Figma Node 396:263) */}
       <section className="figma-news-container">
         {/* COT TRAI: DANH SACH BAN PATCH */}
         <aside className="figma-news-sidebar" aria-label="Danh sach cac ban cap nhat">
           <div className="figma-news-sidebar-header">
-            <h2 className="figma-news-sidebar-title">
-              <span>Patch Notes</span>
-            </h2>
+            <div className="figma-news-header-actions">
+              {/* Nut Back quay lai trang chu */}
+              <button
+                type="button"
+                className="figma-news-back-btn"
+                onClick={() => {
+                  if (onBackHome) onBackHome();
+                }}
+                aria-label="Quay lai trang chinh"
+                title="Quay lai Trang Chu"
+              >
+                <span aria-hidden="true">&larr;</span>
+                <span>Back</span>
+              </button>
+              <h2 className="figma-news-sidebar-title">
+                <span>Patch Notes</span>
+              </h2>
+            </div>
 
             {/* Nut them moi danh cho Admin */}
             {isAuthenticated && (

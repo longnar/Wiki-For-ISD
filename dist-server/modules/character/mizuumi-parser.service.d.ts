@@ -6,7 +6,7 @@ export interface ParsedMizuumiMove {
     ACTIVE: number | null;
     RECOVERY: number | null;
     ADV_ON_BLOCK: number | null;
-    ADV_ON_HIT: number | null;
+    ADV_ON_HIT: string | null;
     INVULNERABILITY: string | null;
     guard: string | null;
     move_type: string;
@@ -14,6 +14,7 @@ export interface ParsedMizuumiMove {
     properties: string | null;
     description: string | null;
     hitbox_url: string | null;
+    hitbox_urls?: string | null;
     hitbox_caption: string | null;
     status?: 'new' | 'modified' | 'unchanged';
     diffFields?: string[];
@@ -24,6 +25,7 @@ export declare class MizuumiParserService {
     private parseSingleTemplate;
     private parseKeyValueBlock;
     private normalizeMoveObject;
+    private parseAdvOnHit;
     private parseNumber;
     private normalizeGuard;
     private inferMoveType;

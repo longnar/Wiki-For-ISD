@@ -48,6 +48,10 @@ __decorate([
     __metadata("design:type", String)
 ], Glossary.prototype, "image_url", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Glossary.prototype, "image_urls", void 0);
+__decorate([
     (0, typeorm_1.Column)({ length: 255, nullable: true }),
     __metadata("design:type", String)
 ], Glossary.prototype, "video_url", void 0);

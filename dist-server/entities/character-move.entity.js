@@ -52,8 +52,8 @@ __decorate([
     __metadata("design:type", Number)
 ], CharacterMove.prototype, "ADV_ON_BLOCK", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'int', nullable: true }),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
 ], CharacterMove.prototype, "ADV_ON_HIT", void 0);
 __decorate([
     (0, typeorm_1.Column)({ length: 255, nullable: true }),
@@ -63,6 +63,10 @@ __decorate([
     (0, typeorm_1.Column)({ length: 255, nullable: true }),
     __metadata("design:type", String)
 ], CharacterMove.prototype, "hitbox_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], CharacterMove.prototype, "hitbox_urls", void 0);
 __decorate([
     (0, typeorm_1.Column)({ length: 255, nullable: true }),
     __metadata("design:type", String)

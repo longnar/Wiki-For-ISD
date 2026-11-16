@@ -29,6 +29,9 @@ export class Glossary {
   @Column({ length: 255, nullable: true })
   image_url: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  image_urls: string | null;
+
   @Column({ length: 255, nullable: true })
   video_url: string | null;
 

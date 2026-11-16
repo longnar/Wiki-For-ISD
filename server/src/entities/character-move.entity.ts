@@ -30,14 +30,17 @@ export class CharacterMove {
   @Column({ type: 'int', nullable: true })
   ADV_ON_BLOCK: number | null;
 
-  @Column({ type: 'int', nullable: true })
-  ADV_ON_HIT: number | null;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  ADV_ON_HIT: string | null;
 
   @Column({ length: 255, nullable: true })
   INVULNERABILITY: string | null;
 
   @Column({ length: 255, nullable: true })
   hitbox_url: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  hitbox_urls: string | null;
 
   @Column({ length: 255, nullable: true })
   hitbox_caption: string | null;

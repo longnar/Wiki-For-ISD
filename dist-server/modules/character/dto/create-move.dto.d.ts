@@ -6,9 +6,10 @@ export declare class CreateMoveDto {
     ACTIVE?: number;
     RECOVERY?: number;
     ADV_ON_BLOCK?: number;
-    ADV_ON_HIT?: number;
+    ADV_ON_HIT?: string | number;
     INVULNERABILITY?: string;
     hitbox_url?: string;
+    hitbox_urls?: string;
     hitbox_caption?: string;
     move_type?: string;
     guard?: string;

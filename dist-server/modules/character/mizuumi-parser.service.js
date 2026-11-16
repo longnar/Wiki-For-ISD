@@ -96,7 +96,7 @@ let MizuumiParserService = class MizuumiParserService {
             ACTIVE: this.parseNumber(raw.ACTIVE ?? raw.active),
             RECOVERY: this.parseNumber(raw.RECOVERY ?? raw.recovery),
             ADV_ON_BLOCK: this.parseNumber(raw.ADV_ON_BLOCK ?? raw.onBlock ?? raw.on_block),
-            ADV_ON_HIT: this.parseNumber(raw.ADV_ON_HIT ?? raw.onHit ?? raw.on_hit),
+            ADV_ON_HIT: this.parseAdvOnHit(raw.ADV_ON_HIT ?? raw.onHit ?? raw.on_hit),
             INVULNERABILITY: raw.INVULNERABILITY || raw.invuln ? String(raw.INVULNERABILITY || raw.invuln).trim() : null,
             guard: this.normalizeGuard(raw.guard),
             move_type: moveType,
@@ -106,6 +106,14 @@ let MizuumiParserService = class MizuumiParserService {
             hitbox_url: this.normalizeHitboxUrl(raw.hitbox_url || raw.hitbox || raw.image),
             hitbox_caption: raw.hitbox_caption || raw.caption ? String(raw.hitbox_caption || raw.caption).trim() : null,
         };
+    }
+    parseAdvOnHit(val) {
+        if (val === undefined || val === null || val === '')
+            return null;
+        const str = String(val).trim();
+        if (!str || str === '-')
+            return null;
+        return str;
     }
     parseNumber(val) {
         if (val === undefined || val === null || val === '')
