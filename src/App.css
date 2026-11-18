@@ -1,4 +1,4 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&family=Podkova:wght@500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&family=Podkova:wght@500&display=swap");
 
 :root {
   --content-width: min(1320px, calc(100% - 48px));
@@ -1583,7 +1583,7 @@ footer:not(.main-footer) {
   overflow: hidden;
   isolation: isolate;
   color: #fff;
-  font-family: Inter, "Segoe UI", sans-serif;
+  font-family: var(--font-info);
   background:
     linear-gradient(180deg, rgba(124, 211, 245, 0.35), rgba(124, 211, 245, 0.35)),
     url("./assets/Next-Fes-SkyTemplate.png") center / cover no-repeat;

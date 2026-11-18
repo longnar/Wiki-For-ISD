@@ -5,4 +5,5 @@ export declare class CreateGlossaryDto {
     level?: GlossaryLevel;
     parent_id?: number | null;
     video_url?: string;
+    image_urls?: string;
 }

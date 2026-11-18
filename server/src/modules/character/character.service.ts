@@ -110,8 +110,9 @@ export class CharacterService {
     await this.getCharacterById(characterId);
     const hitboxUrl = file ? await this.storageService.uploadFile(file, 'hitboxes') : (dto.hitbox_url || null);
     const newMove = this.moveRepo.create({
-      character_id: characterId,
       ...dto,
+      character_id: characterId,
+      ADV_ON_HIT: dto.ADV_ON_HIT != null ? String(dto.ADV_ON_HIT) : null,
       hitbox_url: hitboxUrl,
     });
     const saved = await this.moveRepo.save(newMove);
@@ -129,7 +130,10 @@ export class CharacterService {
       dto.hitbox_url = await this.storageService.uploadFile(file, 'hitboxes');
     }
 
-    Object.assign(move, dto);
+    Object.assign(move, {
+      ...dto,
+      ...(dto.ADV_ON_HIT !== undefined ? { ADV_ON_HIT: dto.ADV_ON_HIT != null ? String(dto.ADV_ON_HIT) : null } : {}),
+    });
     const saved = await this.moveRepo.save(move);
     return { message: 'Character move updated successfully.', move: saved };
   }
@@ -213,7 +217,7 @@ export class CharacterService {
         ACTIVE: m.ACTIVE ?? null,
         RECOVERY: m.RECOVERY ?? null,
         ADV_ON_BLOCK: m.ADV_ON_BLOCK ?? null,
-        ADV_ON_HIT: m.ADV_ON_HIT ?? null,
+        ADV_ON_HIT: m.ADV_ON_HIT != null ? String(m.ADV_ON_HIT) : null,
         INVULNERABILITY: m.INVULNERABILITY || null,
         guard: m.guard || 'Mid',
         move_type: m.move_type || 'normal',
@@ -221,6 +225,7 @@ export class CharacterService {
         properties: m.properties || null,
         description: m.description || null,
         hitbox_url: m.hitbox_url || null,
+        hitbox_urls: m.hitbox_urls || null,
         hitbox_caption: m.hitbox_caption || null,
       };
 

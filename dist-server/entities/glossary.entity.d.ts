@@ -8,6 +8,7 @@ export declare class Glossary {
     parent: Glossary | null;
     children: Glossary[];
     image_url: string | null;
+    image_urls: string | null;
     video_url: string | null;
     created_at: Date;
     updated_at: Date;

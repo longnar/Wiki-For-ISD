@@ -373,16 +373,18 @@ export default function CharacterSelectGrid({
            FIGMA NODE 112:109: CHARACTER SCREEN (e.g. Fubuki Screen)
            ========================================================= */
         <div className="figma-showcase-screen">
-          {/* Nút quay lại màn hình chọn tướng */}
-          <button
-            type="button"
-            className="figma-showcase-back-btn"
-            onClick={() => setViewMode('diamond')}
-            aria-label="Quay lại màn hình chọn tướng"
-            title="Quay lại lưới chọn tướng"
-          >
-            ← Back
-          </button>
+          {/* Thanh trên cùng chứa nút quay lại màn hình chọn tướng */}
+          <div className="figma-showcase-top-bar">
+            <button
+              type="button"
+              className="figma-showcase-back-btn brand-icon-btn"
+              onClick={() => setViewMode('diamond')}
+              aria-label="Quay lại danh sách nhân vật"
+              title="Quay lại danh sách chọn nhân vật"
+            >
+              <img src={brandIcon} alt="Quay lại" className="figma-showcase-back-brand-img" />
+            </button>
+          </div>
 
           {/* Bố cục Showcase chi tiết */}
           <div className="figma-showcase-layout">

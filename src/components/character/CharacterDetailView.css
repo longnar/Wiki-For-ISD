@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 84px 20px 24px;
   box-sizing: border-box;
   background: transparent;
@@ -24,34 +24,34 @@
   user-select: none;
 }
 
-/* Nút Back quay lại màn hình Showcase - Flat Glassmorphism */
+/* Nút Back quay lại màn hình Showcase - In-flow Header Button */
 .figma-detail-back-btn {
-  position: absolute;
-  top: 80px;
-  left: 32px;
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 24px;
-  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
   border-radius: 9999px;
   color: #ffffff;
+  font-family: var(--font-title);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  z-index: 20;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .figma-detail-back-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.32);
+  border-color: #38bdf8;
   color: #38bdf8;
+  transform: translateX(-2px);
 }
 
 /* =========================================================
@@ -60,18 +60,19 @@
    ========================================================= */
 .figma-detail-container {
   width: min(1820px, 98vw);
-  height: min(920px, 94vh);
-  min-height: min(720px, 85vh);
+  height: calc(100vh - 108px);
+  max-height: 940px;
+  min-height: 560px;
   background: rgba(20, 60, 92, 0.42);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 36px;
   border: 1.5px solid rgba(255, 255, 255, 0.4);
-  padding: 26px 34px;
+  padding: 22px 30px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   position: relative;
   overflow: hidden;
 }
@@ -786,7 +787,58 @@
 }
 
 .adv-zero {
-  color: #cbd5e1;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.adv-hkd {
+  display: inline-block;
+  padding: 1px 7px;
+  background: rgba(168, 85, 247, 0.25);
+  border: 1px solid rgba(168, 85, 247, 0.6);
+  border-radius: 4px;
+  color: #d8b4fe !important;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.adv-skd {
+  display: inline-block;
+  padding: 1px 7px;
+  background: rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  border-radius: 4px;
+  color: #fde047 !important;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.adv-launch {
+  display: inline-block;
+  padding: 1px 7px;
+  background: rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  border-radius: 4px;
+  color: #7dd3fc !important;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.adv-special {
+  display: inline-block;
+  padding: 1px 7px;
+  background: rgba(236, 72, 153, 0.25);
+  border: 1px solid rgba(236, 72, 153, 0.6);
+  border-radius: 4px;
+  color: #f472b6 !important;
+  font-weight: 800;
+  font-size: 11px;
 }
 
 .figma-expand-btn {
@@ -974,9 +1026,9 @@
   gap: 10px;
   font-size: 13px;
   background: rgba(245, 158, 11, 0.15);
-  border-left: 3px solid #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .figma-mizuumi-prop-label {
@@ -1529,13 +1581,28 @@
   to { transform: scale(1); opacity: 1; }
 }
 
+/* Sticky first column in frame data table for rapid lookup */
+.figma-framedata-table th:first-child,
+.figma-framedata-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: rgba(16, 45, 72, 0.95);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.figma-framedata-table th:first-child {
+  z-index: 10;
+  background: rgba(22, 62, 96, 0.98);
+}
+
 /* =========================================================
    RESPONSIVE ADJUSTMENTS FOR FRAME DATA & DETAIL VIEW
    ========================================================= */
 
 @media (max-width: 1200px) {
   .figma-detail-screen {
-    padding: 18px 12px;
+    padding: 80px 14px 24px;
     height: auto;
     min-height: 100vh;
     overflow-y: auto;
@@ -1543,18 +1610,15 @@
   }
 
   .figma-detail-back-btn {
-    position: relative;
-    top: auto;
-    left: auto;
-    align-self: flex-start;
-    margin-bottom: 14px;
+    padding: 6px 14px;
+    font-size: 13px;
   }
 
   .figma-detail-container {
     height: auto;
     min-height: auto;
     max-height: none;
-    padding: 20px 22px;
+    padding: 18px 20px;
     overflow: visible;
     border-radius: 26px;
   }
@@ -1580,19 +1644,39 @@
 }
 
 /* Khi chiều cao màn hình nhỏ (Laptop 1366x768 hoặc Windows Display Scale 125%/150%) */
-@media (max-height: 820px) {
+@media (max-height: 850px) and (min-width: 1201px) {
   .figma-detail-screen {
     justify-content: flex-start;
-    padding-top: 16px;
-    padding-bottom: 24px;
+    padding-top: 76px;
+    padding-bottom: 16px;
     overflow-y: auto;
   }
 
   .figma-detail-container {
-    height: auto;
-    min-height: calc(100vh - 40px);
-    max-height: none;
-    overflow: visible;
+    height: calc(100vh - 92px);
+    max-height: calc(100vh - 92px);
+    min-height: 520px;
+    padding: 16px 22px;
+    gap: 10px;
+    border-radius: 24px;
+  }
+
+  .figma-detail-char-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .figma-detail-char-name {
+    font-size: 24px;
+  }
+
+  .figma-teal-portrait-box {
+    height: 150px;
+  }
+
+  .figma-detail-stats-panel.figma-teal-card {
+    padding: 14px 16px;
+    gap: 10px;
   }
 }
 

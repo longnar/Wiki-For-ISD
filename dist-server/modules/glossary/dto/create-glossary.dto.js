@@ -46,4 +46,10 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateGlossaryDto.prototype, "video_url", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '["/uploads/img1.png", "/uploads/img2.png"]', description: 'Danh sách URL ảnh minh họa' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateGlossaryDto.prototype, "image_urls", void 0);
 //# sourceMappingURL=create-glossary.dto.js.map

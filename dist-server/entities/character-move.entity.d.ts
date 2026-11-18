@@ -9,9 +9,10 @@ export declare class CharacterMove {
     ACTIVE: number | null;
     RECOVERY: number | null;
     ADV_ON_BLOCK: number | null;
-    ADV_ON_HIT: number | null;
+    ADV_ON_HIT: string | null;
     INVULNERABILITY: string | null;
     hitbox_url: string | null;
+    hitbox_urls: string | null;
     hitbox_caption: string | null;
     move_type: string | null;
     guard: string | null;

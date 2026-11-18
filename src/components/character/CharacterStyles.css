@@ -196,48 +196,78 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 30px 40px;
+  align-items: center;
+  /* 76px chừa khoảng trống cho SiteHeader cố định (cao 64px) + khoảng đệm an toàn */
+  padding: 76px clamp(16px, 2.5vw, 40px) 16px;
   box-sizing: border-box;
 }
 
+.figma-showcase-top-bar {
+  width: 100%;
+  max-width: min(1660px, 94vw);
+  margin: 0 auto 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
 .figma-showcase-back-btn {
-  align-self: flex-start;
-  padding: 10px 22px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
-  margin-bottom: 16px;
-  z-index: 10;
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
 }
 
 .figma-showcase-back-btn:hover {
-  background: #fff;
-  color: #000;
-  transform: translateX(-4px);
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  transform: scale(1.12);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+}
+
+.figma-showcase-back-brand-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.figma-showcase-back-btn:hover .figma-showcase-back-brand-img {
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
 }
 
 .figma-showcase-layout {
+  max-width: min(1660px, 94vw);
+  width: 100%;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(340px, 500px) 1fr 90px;
-  gap: clamp(16px, 2.5vw, 32px);
+  grid-template-columns: minmax(460px, 560px) 1fr 144px;
+  gap: clamp(18px, 2.5vw, 40px);
   align-items: center;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - 136px);
 }
 
-/* Left Info Card (Figma Node 112:111: 723x938, r: 50px, background: rgba(54,83,81,0.32)) */
+/* Left Info Card (Figma Node 112:111: Tinh chỉnh padding vừa khít 1 màn hình laptop) */
 .figma-showcase-info-card {
   position: relative;
   background: rgba(30, 48, 55, 0.48);
-  border: 3px solid rgba(255, 255, 255, 0.35);
-  border-radius: 40px;
-  padding: 48px 40px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 32px;
+  padding: clamp(26px, 2.2vw, 36px) clamp(24px, 2vw, 32px);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
@@ -246,15 +276,28 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.18;
+  opacity: 0.22;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .figma-showcase-frame {
   position: absolute;
-  right: -50px;
-  top: -50px;
-  width: 320px;
+  right: -40px;
+  top: -40px;
+  width: 110%;
+  min-width: 460px;
   height: auto;
+}
+
+.figma-showcase-polygon {
+  position: absolute;
+  bottom: -30px;
+  left: -30px;
+  width: 180px;
+  height: auto;
+  opacity: 0.16;
+  transform: rotate(-15deg);
 }
 
 .figma-showcase-text-content {
@@ -266,32 +309,32 @@
 
 .figma-showcase-title {
   margin: 0;
-  font-size: clamp(20px, 1.8vw, 26px);
+  font-family: var(--font-title);
+  font-size: 19px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: #7dd3fc;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
 }
 
 .figma-showcase-char-name {
-  margin: 12px 0 28px;
-  font-size: clamp(32px, 3.2vw, 48px);
+  margin: 8px 0 18px;
+  font-family: var(--font-title);
+  font-size: clamp(32px, 2.8vw, 46px);
   font-weight: 900;
   line-height: 1.15;
-  background: linear-gradient(135deg, #fff 0%, #bae6fd 60%, #38bdf8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+  color: #ffffff;
+  text-shadow: 0 3px 12px rgba(56, 189, 248, 0.45);
 }
 
 .figma-showcase-props {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  font-size: clamp(16px, 1.4vw, 20px);
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.6;
+  gap: 12px;
+  font-family: var(--font-info);
+  font-size: 19px;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.52;
 }
 
 .figma-showcase-props p {
@@ -301,44 +344,53 @@
 .figma-showcase-props strong {
   color: #7dd3fc;
   font-weight: 700;
+  font-family: var(--font-title);
+  font-size: 16px;
+  letter-spacing: 0.02em;
 }
 
 .figma-showcase-difficulty {
   color: #fbbf24;
   letter-spacing: 3px;
-  font-size: 22px;
+  font-size: 21px;
 }
 
-/* More info button: 'Chi Tiết' (Figma Node 294:83: 303x111px, r: 25px, border: 5px solid white, black bg) */
+/* More info button: 'Chi Tiết' (Chuẩn hóa kích thước vừa vặn, bo viền thanh thoát) */
 .figma-more-info-btn {
-  margin-top: 40px;
-  width: min(290px, 100%);
-  height: 84px;
-  border-radius: 25px;
-  border: 5px solid #ffffff;
+  margin-top: 22px;
+  width: min(210px, 100%);
+  height: 54px;
+  border-radius: 16px;
+  border: 2.5px solid #ffffff;
   background: #000000;
   color: #ffffff;
-  font-size: clamp(26px, 2.4vw, 36px);
+  font-family: var(--font-title);
+  font-size: 21px;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.25s ease;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .figma-more-info-btn:hover {
   background: #ffffff;
   color: #000000;
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 10px 24px rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.35);
 }
 
-/* Center/Right Art Panel (Figma Node 122:13: 705x964px) */
+/* Center/Right Art Panel (Tối ưu tỷ lệ không làm tràn chiều cao trang) */
 .figma-showcase-art-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 85vh;
+  height: calc(100vh - 128px);
+  max-height: 840px;
+  min-height: 480px;
   position: relative;
 }
 
@@ -361,34 +413,30 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* Right Side Quick Roster Switcher (135x135px buttons stacked) */
+/* Right Side Quick Roster Switcher: Lưới 2 cột mini (60px x 60px) hiện trọn vẹn 13 tướng không cần cuộn */
 .figma-showcase-sidebar-roster {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.figma-showcase-sidebar-roster::-webkit-scrollbar {
-  width: 5px;
-}
-.figma-showcase-sidebar-roster::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(2, 60px);
+  gap: 8px;
+  justify-content: center;
+  align-content: center;
+  align-self: center;
+  margin: auto 0;
+  max-height: calc(100vh - 128px);
+  padding: 4px;
+  box-sizing: border-box;
 }
 
 .figma-mini-slot {
-  width: 74px;
-  height: 74px;
-  border-radius: 18px;
-  border: 3px solid rgba(255, 255, 255, 0.25);
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
   background: rgba(15, 23, 42, 0.8);
   overflow: hidden;
   padding: 0;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -402,20 +450,20 @@
 }
 
 .figma-mini-slot span {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
   color: #60a5fa;
 }
 
 .figma-mini-slot:hover {
   border-color: #fff;
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 
 .figma-mini-slot.active {
   border-color: #38bdf8;
-  box-shadow: 0 0 14px #38bdf8;
-  transform: scale(1.08);
+  box-shadow: 0 0 12px #38bdf8;
+  transform: scale(1.06);
 }
 
 /* =========================================================
@@ -706,8 +754,8 @@
 .fd-beginner-hint {
   padding: 12px 18px;
   background: rgba(59, 130, 246, 0.12);
-  border-left: 4px solid #3b82f6;
-  border-radius: 8px;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-radius: 12px;
   font-size: 13px;
   line-height: 1.5;
   color: #bfdbfe;
@@ -903,18 +951,6 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .figma-showcase-layout {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-  .figma-showcase-art-panel {
-    height: 50vh;
-  }
-  .figma-showcase-sidebar-roster {
-    flex-direction: row;
-    max-height: none;
-    overflow-x: auto;
-  }
   .char-profile-view {
     grid-template-columns: 1fr;
   }
@@ -1008,12 +1044,11 @@
 
 .figma-char-edit-header h3 {
   margin: 0;
+  font-family: var(--font-title);
   font-size: 20px;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff, #5eead4);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #5eead4;
+  letter-spacing: 0.03em;
 }
 
 .figma-char-edit-close-btn {
@@ -1166,38 +1201,47 @@
    RESPONSIVE MEDIA QUERIES FOR SELECTION & SHOWCASE SCREENS
    ========================================================= */
 
-/* Khi chiều rộng màn hình <= 1200px: Chuyển Showcase từ 3 cột sang 2 cột, dải tướng chuyển xuống dưới */
-@media (max-width: 1200px) {
+/* Khi chiều rộng màn hình <= 1280px: Chuyển Showcase từ 3 cột sang 2 cột, dải tướng chuyển xuống dưới dạng hàng ngang */
+@media (max-width: 1280px) {
   .figma-showcase-layout {
-    grid-template-columns: minmax(320px, 440px) 1fr;
+    grid-template-columns: minmax(400px, 500px) 1fr;
     gap: 20px;
   }
 
   .figma-showcase-sidebar-roster {
     grid-column: 1 / -1;
+    display: flex;
     flex-direction: row;
     max-height: none;
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    padding-bottom: 10px;
+    padding-bottom: 8px;
     padding-top: 4px;
+    gap: 8px;
     justify-content: flex-start;
+    margin: 0;
   }
 
   .figma-mini-slot {
-    width: 62px;
-    height: 62px;
-    border-radius: 14px;
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
   }
 }
 
-/* Khi chiều rộng màn hình <= 860px (Tablet / Cửa sổ chia đôi): Xếp chồng các khối */
+/* Khi chiều rộng màn hình <= 860px (Tablet / Cửa sổ chia đôi): Xếp chồng các khối, bảo toàn padding cho SiteHeader */
 @media (max-width: 860px) {
   .figma-showcase-screen {
-    padding: 16px 14px;
+    /* 80px chừa chỗ an toàn cho SiteHeader (58px khi <= 700px) */
+    padding: 80px 16px 20px;
     min-height: 100vh;
     height: auto;
+  }
+
+  .figma-showcase-back-btn {
+    width: 52px;
+    height: 52px;
   }
 
   .figma-showcase-layout {
@@ -1208,24 +1252,29 @@
   }
 
   .figma-showcase-info-card {
-    padding: 28px 20px;
+    padding: 24px 20px;
     border-radius: 24px;
     width: 100%;
     box-sizing: border-box;
   }
 
+  .figma-showcase-frame {
+    width: 100%;
+    min-width: 320px;
+  }
+
   .figma-showcase-art-panel {
-    height: 48vh;
-    max-height: 420px;
+    height: 45vh;
+    max-height: 380px;
     width: 100%;
   }
 
   .figma-more-info-btn {
-    margin-top: 24px;
+    margin-top: 20px;
     width: 100%;
-    height: 64px;
-    font-size: 24px;
-    border-radius: 18px;
+    height: 48px;
+    font-size: 18px;
+    border-radius: 14px;
   }
 
   .figma-selection-screen {
@@ -1244,53 +1293,86 @@
 /* Khi chiều rộng màn hình <= 480px (Mobile nhỏ) */
 @media (max-width: 480px) {
   .figma-showcase-screen {
-    padding: 12px 10px;
+    padding: 76px 12px 16px;
   }
 
   .figma-showcase-char-name {
-    font-size: 30px;
-    margin: 8px 0 16px;
+    font-size: 26px;
+    margin: 6px 0 14px;
   }
 
   .figma-showcase-props {
     font-size: 15px;
-    gap: 10px;
+    gap: 8px;
   }
 
   .figma-mini-slot {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
   }
 }
 
 /* Khi chiều cao màn hình nhỏ (Low-height viewport như laptop 1366x768 scale 125%/150%) */
-@media (max-height: 720px) {
+@media (max-height: 800px) and (min-width: 861px) {
   .figma-selection-stage {
     min-height: calc(100vh - 20px);
     padding: 4px 0;
   }
 
   .figma-showcase-screen {
-    padding: 16px 24px;
+    padding: 72px 20px 12px;
+  }
+
+  .figma-showcase-top-bar {
+    margin-bottom: 6px;
+  }
+
+  .figma-showcase-back-btn {
+    width: 52px;
+    height: 52px;
   }
 
   .figma-showcase-layout {
     min-height: auto;
     gap: 16px;
+    grid-template-columns: minmax(400px, 480px) 1fr 126px;
   }
 
   .figma-showcase-art-panel {
-    height: 70vh;
+    height: calc(100vh - 110px);
+    max-height: 560px;
+    min-height: 380px;
   }
 
   .figma-showcase-info-card {
-    padding: 24px 28px;
+    padding: 20px 22px;
+    border-radius: 24px;
+  }
+
+  .figma-showcase-char-name {
+    margin: 4px 0 12px;
+    font-size: 26px;
+  }
+
+  .figma-showcase-props {
+    gap: 8px;
+    font-size: 16px;
   }
 
   .figma-more-info-btn {
-    margin-top: 18px;
-    height: 60px;
-    font-size: 24px;
+    margin-top: 14px;
+    height: 46px;
+    font-size: 18px;
+  }
+
+  .figma-mini-slot {
+    width: 50px;
+    height: 50px;
+  }
+
+  .figma-showcase-sidebar-roster {
+    grid-template-columns: repeat(2, 50px);
+    gap: 6px;
   }
 }

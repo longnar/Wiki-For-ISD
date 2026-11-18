@@ -91,6 +91,7 @@ export class GlossaryService {
         level: glossaryLevel,
         parent_id: parentIdNum,
         image_url: imageUrl,
+        image_urls: dto.image_urls || null,
         video_url: video_url && video_url.trim() !== '' ? video_url.trim() : null,
       });
 
@@ -140,6 +141,9 @@ export class GlossaryService {
     glossary.definition = dto.definition !== undefined ? dto.definition : glossary.definition;
     glossary.level = dto.level !== undefined ? (dto.level === 'advanced' ? 'advanced' : 'basic') : glossary.level;
     glossary.image_url = imageUrl;
+    if (dto.image_urls !== undefined) {
+      glossary.image_urls = dto.image_urls && dto.image_urls.trim() !== '' ? dto.image_urls.trim() : null;
+    }
     if (dto.video_url !== undefined) {
       glossary.video_url = dto.video_url && dto.video_url.trim() !== '' ? dto.video_url.trim() : null;
     }
